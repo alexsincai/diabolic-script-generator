@@ -65,7 +65,7 @@ def split_into_groups(string: str) -> List[str]:
         key=lambda item: item.get("index"),
     )
 
-    values = [v.get("group").strip() for v in values]
+    values = [item.get("group").strip() for item in values]
 
     if not len(values):
         raise ValueError('Words can not contain only vowels and/or "h"')
@@ -86,12 +86,47 @@ def compute_group_angles(groups: List[str]) -> List[int]:
     return [0 if i == 0 else a for i, a in enumerate(angles)]
 
 
+def remove_vowels(string: str) -> str:
+    return "".join([character for character in string if character not in "aeiouh&"])
+
+
 def compute_start_caps(groups: List[str], string: str) -> List[Optional[int]]:
-    pass
+    angles = populate_array(
+        template=[2, 3, 2, 1],
+        base=groups,
+    )
+    checks = []
+    string = remove_vowels(string)
+
+    for i, group in enumerate(groups):
+        group = remove_vowels(group)
+        checks.append(i == 0 or string[string.index(group) - 1] == " ")
+        string = string[len(group) :]
+
+    return [0 if i == 0 else a if checks[i] else None for i, a in enumerate(angles)]
 
 
 def compute_end_caps(groups: List[str], string: str) -> List[Optional[int]]:
-    pass
+    angles = populate_array(
+        template=[1, 0, 3, 0],
+        base=groups,
+    )
+    checks = []
+    string = remove_vowels(string)
+
+    for i, group in enumerate(groups):
+        group = remove_vowels(group)
+
+        is_end = i == len(groups) - 1
+        before_space = string[string.index(group) + len(group)] == " "
+
+        checks.append(is_end or before_space)
+        string = string[len(group) :]
+
+    return [
+        1 if i == 0 and checks[i] else angle if checks[i] else None
+        for i, angle in enumerate(angles)
+    ]
 
 
 def compute_start_connectors(groups: List[str], string: str) -> List[Optional[int]]:
