@@ -73,8 +73,17 @@ def split_into_groups(string: str) -> List[str]:
     return values
 
 
+def populate_array(template: List[Union[int, List[int]]], base: List[str]) -> List[int]:
+    out = template * ((len(base) // len(template)) + 1)
+    return out[: len(base)]
+
+
 def compute_group_angles(groups: List[str]) -> List[int]:
-    pass
+    angles = populate_array(
+        template=[1, 3, 2, 0],
+        base=groups,
+    )
+    return [0 if i == 0 else a for i, a in enumerate(angles)]
 
 
 def compute_start_caps(groups: List[str], string: str) -> List[Optional[int]]:
