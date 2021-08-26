@@ -1,9 +1,9 @@
 from typing import List, Optional, Union
 from PIL import Image
+from re import sub, compile, MULTILINE
 
 
 def clean_up_string(string: str) -> str:
-    from re import sub, MULTILINE
 
     string = string.lower().strip()
     string = sub(
@@ -29,7 +29,48 @@ def clean_up_string(string: str) -> str:
 
 
 def split_into_groups(string: str) -> List[str]:
-    pass
+    values = []
+
+    pattern = "[aeiouh]*[bcdfgjklmnpqrstvwxyz][_,:\?!&\.]*[aeiouh]*|"
+    pattern += "[aeiouh]*[bcdfgjklmnpqrstvwxyz_,:\?!&\.][aeiouh]*"
+
+    pattern = compile(
+        pattern=pattern,
+        flags=MULTILINE,
+    )
+
+    word_index = 0
+    for word in string.split(" "):
+
+        for match in pattern.finditer(string=word):
+            if match:
+                group = ""
+                index = 0
+
+                for i in range(*match.span(0)):
+                    index = i + word_index
+                    group += word[i]
+
+                word_index = index
+
+                values.append(
+                    dict(
+                        index=word_index,
+                        group=group,
+                    )
+                )
+
+    values = sorted(
+        values,
+        key=lambda item: item.get("index"),
+    )
+
+    values = [v.get("group").strip() for v in values]
+
+    if not len(values):
+        raise ValueError('Words can not contain only vowels and/or "h"')
+
+    return values
 
 
 def compute_group_angles(groups: List[str]) -> List[int]:
