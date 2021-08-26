@@ -3,7 +3,29 @@ from PIL import Image
 
 
 def clean_up_string(string: str) -> str:
-    return string
+    from re import sub, MULTILINE
+
+    string = string.lower().strip()
+    string = sub(
+        pattern=r"([bcdfghjklmnpqrstvwxyz])\1+",
+        repl=r"\1&",
+        string=string,
+        flags=MULTILINE,
+    )
+    string = sub(
+        pattern=r"\b([aeiouh]+)\s",
+        repl=r" \1_ ",
+        string=string,
+        flags=MULTILINE,
+    )
+    string = sub(
+        pattern=r"\s+",
+        repl=" ",
+        string=string,
+        flags=MULTILINE,
+    )
+
+    return string.strip()
 
 
 def split_into_groups(string: str) -> List[str]:
