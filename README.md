@@ -1,0 +1,7 @@
+# Diabolic script generator
+
+I was inspired by the Diabolic script of [Codex Inversus](https://linktr.ee/Codex_Inversus), so I wrote a generator that renders mostly accurate images of diabolic text.
+
+Note, the letter forms were designed by Luca Vanzella, I only did the implementation.
+
+Vowel placement is still wonky, and some words will simply not work. Calling it good for now.
