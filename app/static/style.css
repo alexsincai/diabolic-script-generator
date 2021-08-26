@@ -1,0 +1,106 @@
+:root {
+    --bg: antiquewhite;
+    --color: darkred;
+    --accent: darkorange;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    font: 16px/1.6 sans-serif;
+}
+
+body {
+    max-width: calc(420px + 4em);
+    height: calc(100vh - 4em);
+
+    margin: 0 auto;
+    padding: 2em;
+
+    background: var(--bg);
+    color: var(--color);
+}
+
+a {
+    text-decoration: none;
+    color: var(--color);
+    font-weight: bold;
+}
+
+a:focus,
+a:hover {
+    text-decoration: underline;
+}
+
+p {
+    margin-bottom: 1em;
+}
+
+section + section {
+    margin-top: 2em;
+}
+
+#input p {
+    text-align: right;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+}
+
+label {
+    font-size: 2em;
+    font-weight: bold;
+}
+
+textarea {
+    width: 100%;
+    margin: 1em auto;
+    padding: 0.5em;
+
+    font-family: inherit;
+    font-size: 1em;
+    text-align: center;
+
+    border: 1px solid var(--color);
+    border-radius: 0.5em;
+    background: inherit;
+    color: inherit;
+}
+
+textarea:focus {
+    outline: 0;
+}
+
+button {
+    width: max-content;
+    margin: 0 auto;
+    padding: 0.75em 1.5em;
+
+    border: 1px solid var(--accent);
+    border-radius: 0.5em;
+
+    cursor: pointer;
+    background: var(--color);
+    color: var(--accent);
+
+    transition: all 0.3s;
+}
+
+button:hover,
+button:focus {
+    background: var(--accent);
+    color: var(--color);
+    border-color: var(--color);
+    outline: 0;
+}
+
+img {
+    margin: 0 auto;
+    display: block;
+}

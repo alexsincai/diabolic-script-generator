@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block content %}
+<main>
+    <p>
+        This application <em>should</em> generate samples of the Diabolic
+        script, as it appears in
+        <a href="https://linktr.ee/Codex_Inversus">Codex Inversus</a>.
+    </p>
+    <p>
+        The application was written in Python by
+        <a href="https://www.reddit.com/user/rockeh/">rockeh</a>, who had no
+        hand in developing the written characters.
+    </p>
+    <p>
+        Currently, the layout of the vowels is wonky. This will be fixed,
+        eventually. Additionally, on some words (apparently, any word that
+        contains only vowels and/or the letter "h") it simply will not work.
+        Sorry about that.
+    </p>
+    <p><a href="{{ url_for('index') }}">Back to the generator</a></p>
+</main>
+
+{% endblock %}
