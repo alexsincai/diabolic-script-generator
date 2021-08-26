@@ -278,6 +278,7 @@ def paste_transparent_image(
 
 class Diabolic:
     SIZE = 210
+    VOWEL = 50
     SPECIAL_CHARACTERS = {
         "_": "blank",
         ",": "comma",
@@ -337,6 +338,7 @@ class Diabolic:
             end_caps=end_caps,
             connectors_before=connectors_before,
             connectors_after=connectors_after,
+            vowels=vowels,
         )
 
     def compute_image_width(self, horizontals: List[int]) -> int:
@@ -357,6 +359,7 @@ class Diabolic:
         end_caps: List[Optional[int]],
         connectors_before: List[int],
         connectors_after: List[int],
+        vowels: List[dict[str, Union[str, int]]],
     ) -> None:
 
         self.place_consonants(
@@ -381,6 +384,8 @@ class Diabolic:
             connectors_before=connectors_before,
             connectors_after=connectors_after,
         )
+
+        self.place_vowels(vowels=vowels)
 
     def place_consonants(
         self,
@@ -417,7 +422,7 @@ class Diabolic:
         verticals: List[int],
         start_caps: List[int],
         end_caps: List[int],
-    ):
+    ) -> None:
         for i in range(len(groups)):
             horizontal = horizontals[i] * self.SIZE
             vertical = verticals[i] * self.SIZE
@@ -449,7 +454,7 @@ class Diabolic:
         verticals: List[int],
         connectors_before: List[int],
         connectors_after: List[int],
-    ):
+    ) -> None:
         for i in range(len(groups)):
             horizontal = horizontals[i] * self.SIZE
             vertical = verticals[i] * self.SIZE
@@ -475,6 +480,36 @@ class Diabolic:
                     horizontal=int(horizontal + (self.SIZE * 0.5)),
                     vertical=int(vertical + (self.SIZE * 0.25)),
                 )
+
+    def place_vowels(self, vowels: List[dict[str, Union[str, int]]]) -> None:
+        for vowel in vowels:
+            try:
+                char = vowel.get("character")
+                char = (
+                    self.SPECIAL_CHARACTERS.get(char)
+                    if char in self.SPECIAL_CHARACTERS.keys()
+                    else char
+                )
+
+                horizontal = self.SIZE * vowel.get("horizontal")
+                horizontal += [-0.15, 0, 0.85][
+                    vowel.get("horizontal_offset")
+                ] * self.SIZE
+
+                vertical = self.SIZE * vowel.get("vertical")
+                vertical += self.VOWEL * vowel.get("vertical_offset")
+                vertical += self.SIZE * 0.25
+
+                if vowel.get("character") != "h":
+                    self.base_image = paste_transparent_image(
+                        background=self.base_image,
+                        overlay=read_symbol_image(char),
+                        horizontal=int(horizontal),
+                        vertical=int(vertical),
+                    )
+
+            except FileNotFoundError:
+                pass
 
     def build_data_url(self) -> str:
         pass
