@@ -1,4 +1,6 @@
 from flask import Flask, render_template, request, jsonify
+from .diabolic import Diabolic
+
 
 app = Flask(__name__)
 
