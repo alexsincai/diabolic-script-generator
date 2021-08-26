@@ -100,7 +100,11 @@ def compute_start_caps(groups: List[str], string: str) -> List[Optional[int]]:
 
     for i, group in enumerate(groups):
         group = remove_vowels(group)
-        checks.append(i == 0 or string[string.index(group) - 1] == " ")
+
+        is_start = i == 0
+        after_space = string[string.index(group) - 1] == " "
+
+        checks.append(is_start or after_space)
         string = string[len(group) :]
 
     return [0 if i == 0 else a if checks[i] else None for i, a in enumerate(angles)]
@@ -130,11 +134,46 @@ def compute_end_caps(groups: List[str], string: str) -> List[Optional[int]]:
 
 
 def compute_start_connectors(groups: List[str], string: str) -> List[Optional[int]]:
-    pass
+    angles = populate_array(
+        template=[2, 3, 2, 1],
+        base=groups,
+    )
+    checks = []
+    string = remove_vowels(string)
+
+    for i, group in enumerate(groups):
+        group = remove_vowels(group)
+
+        not_start = i != 0
+        not_before_space = string[string.index(group) - 1] != " "
+
+        checks.append(not_start and not_before_space)
+        string = string[len(group) :]
+
+    return [a if checks[i] else None for i, a in enumerate(angles)]
 
 
 def compute_end_connectors(groups: List[str], string: str) -> List[Optional[int]]:
-    pass
+    angles = populate_array(
+        template=[1, 0, 3, 0],
+        base=groups,
+    )
+    checks = []
+    string = remove_vowels(string)
+
+    for i, group in enumerate(groups):
+        group = remove_vowels(group)
+
+        before_end = i != len(groups) - 1
+        not_before_space = string[string.index(group) + len(group)] != " "
+
+        checks.append(before_end and not_before_space)
+        string = string[len(group) :]
+
+    return [
+        1 if i == 0 and checks[i] else a if checks[i] else None
+        for i, a in enumerate(angles)
+    ]
 
 
 def compute_group_horizontals(groups: List[str]) -> List[int]:
