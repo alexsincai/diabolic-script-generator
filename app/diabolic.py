@@ -242,6 +242,8 @@ def compute_vowel_locations(
 
 
 class Diabolic:
+    SIZE = 210
+
     def __init__(self, string: str) -> None:
         string = clean_up_string(string=string)
         groups = split_into_groups(string=string)
@@ -277,17 +279,22 @@ class Diabolic:
             mode="RGBA",
             color=(255, 255, 255, 0),
             size=(
-                self.compute_image_width(),
-                self.compute_image_height(),
+                self.compute_image_width(horizontals=group_horizontals),
+                self.compute_image_height(verticals=group_verticals),
             ),
         )
 
         self.construct_image()
 
-    def compute_image_width(self):
-        pass
+    def compute_image_width(self, horizontals: List[int]) -> int:
+        width = max(horizontals) + 1 if len(horizontals) else 1
+        return self.SIZE * (width + 1)
 
-    def compute_image_height(self):
+    def compute_image_height(self, verticals: List[int]) -> int:
+        height = max(verticals) + 1 if len(verticals) else 1
+        return self.SIZE * height + (self.SIZE // 3) + 1
+
+    def construct_image(self):
         pass
 
     def build_data_url(self) -> str:
