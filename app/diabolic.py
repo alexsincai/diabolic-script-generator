@@ -1,4 +1,5 @@
 from typing import List, Optional, Union
+from PIL import Image
 
 
 def clean_up_string(string: str) -> str:
@@ -77,6 +78,23 @@ class Diabolic:
             verticals=group_verticals,
             angles=angles,
         )
+
+        self.base_image = Image.new(
+            mode="RGBA",
+            color=(255, 255, 255, 0),
+            size=(
+                self.compute_image_width(),
+                self.compute_image_height(),
+            ),
+        )
+
+        self.construct_image()
+
+    def compute_image_width(self):
+        pass
+
+    def compute_image_height(self):
+        pass
 
     def build_data_url(self) -> str:
         pass
