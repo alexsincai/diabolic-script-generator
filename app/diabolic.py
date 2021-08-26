@@ -511,5 +511,16 @@ class Diabolic:
             except FileNotFoundError:
                 pass
 
-    def build_data_url(self) -> str:
-        pass
+    def show(self) -> None:
+        self.base_image.show()
+
+    def build_data_url(self) -> None:
+        from io import BytesIO
+        from base64 import b64encode
+
+        buffer = BytesIO()
+        self.base_image.save(buffer, format="PNG")
+        buffer.seek(0)
+
+        output = buffer.getvalue()
+        return "data:image/png;base64," + b64encode(output).decode()
