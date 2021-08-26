@@ -177,11 +177,14 @@ def compute_end_connectors(groups: List[str], string: str) -> List[Optional[int]
 
 
 def compute_group_horizontals(groups: List[str]) -> List[int]:
-    pass
+    return populate_array(
+        template=[0, 1, 1, 0],
+        base=groups,
+    )
 
 
 def compute_group_verticals(groups: List[str]) -> List[int]:
-    pass
+    return [index // 2 for index in range(len(groups))]
 
 
 def compute_vowel_locations(
