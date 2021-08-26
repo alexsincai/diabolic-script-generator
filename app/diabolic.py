@@ -86,8 +86,12 @@ def compute_group_angles(groups: List[str]) -> List[int]:
     return [0 if i == 0 else a for i, a in enumerate(angles)]
 
 
+def is_vowel(character: str) -> bool:
+    return character in "aeiouh&"
+
+
 def remove_vowels(string: str) -> str:
-    return "".join([character for character in string if character not in "aeiouh&"])
+    return "".join([character for character in string if not is_vowel(character)])
 
 
 def compute_start_caps(groups: List[str], string: str) -> List[Optional[int]]:
@@ -193,7 +197,48 @@ def compute_vowel_locations(
     verticals: List[int],
     angles: List[int],
 ) -> List[dict[str, Union[str, int]]]:
-    pass
+    columns_template = [
+        [0, 1],
+        [0, 1],
+        [2, 1],
+        [1, 2],
+    ]
+    out = []
+
+    for group_index, group in enumerate(groups):
+        consonant_index = [is_vowel(c) for c in group].index(False)
+
+        for i, character in enumerate(group):
+            if is_vowel(character):
+                angle = columns_template[angles[group_index]]
+
+                horizontal = angle[int(i > consonant_index)]
+                vertical = verticals[group_index]
+
+                vertical_offset = 1 if horizontal in [0, 2] else 0
+
+                current = dict(
+                    character=character,
+                    horizontal=horizontals[group_index],
+                    vertical=vertical,
+                    horizontal_offset=horizontal,
+                    vertical_offset=vertical_offset,
+                )
+
+                out.append(current)
+
+    for i in range(1, len(out)):
+        prev = out[i - 1]
+        current = out[i]
+
+        if (
+            prev.get("character") != "h"
+            and current.get("horizontal") == prev.get("horizontal")
+            and current.get("vertical") == prev.get("vertical")
+        ):
+            out[i]["vertical_offset"] += prev.get("vertical_offset") + 1
+
+    return out
 
 
 class Diabolic:
