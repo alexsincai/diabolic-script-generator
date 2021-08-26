@@ -126,7 +126,10 @@ def compute_end_caps(groups: List[str], string: str) -> List[Optional[int]]:
         group = remove_vowels(group)
 
         is_end = i == len(groups) - 1
-        before_space = string[string.index(group) + len(group)] == " "
+        try:
+            before_space = string[string.index(group) + len(group)] == " "
+        except IndexError:
+            pass
 
         checks.append(is_end or before_space)
         string = string[len(group) :]
@@ -169,7 +172,10 @@ def compute_end_connectors(groups: List[str], string: str) -> List[Optional[int]
         group = remove_vowels(group)
 
         before_end = i != len(groups) - 1
-        not_before_space = string[string.index(group) + len(group)] != " "
+        try:
+            not_before_space = string[string.index(group) + len(group)] != " "
+        except IndexError:
+            pass
 
         checks.append(before_end and not_before_space)
         string = string[len(group) :]
