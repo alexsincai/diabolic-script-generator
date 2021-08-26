@@ -241,8 +241,52 @@ def compute_vowel_locations(
     return out
 
 
+def read_symbol_image(name: str) -> Image:
+    from os.path import realpath, join, dirname
+
+    return Image.open(
+        realpath(
+            join(
+                dirname(__file__),
+                "..",
+                "assets",
+                name + ".png",
+            )
+        )
+    )
+
+
+def paste_transparent_image(
+    background: Image,
+    overlay: Image,
+    horizontal: int = 0,
+    vertical: int = 0,
+) -> Image:
+
+    layer = Image.new(
+        mode="RGBA",
+        size=background.size,
+    )
+    layer.paste(
+        im=overlay,
+        box=(horizontal, vertical),
+        mask=overlay,
+    )
+
+    return Image.alpha_composite(background, layer)
+
+
 class Diabolic:
     SIZE = 210
+    SPECIAL_CHARACTERS = {
+        "_": "blank",
+        ",": "comma",
+        ",": "stop",
+        ":": "colon",
+        "!": "exclaim",
+        "?": "question",
+        "&": "repeat",
+    }
 
     def __init__(self, string: str) -> None:
         string = clean_up_string(string=string)
@@ -284,7 +328,11 @@ class Diabolic:
             ),
         )
 
-        self.construct_image()
+        self.construct_image(
+            groups=groups,
+            horizontals=group_horizontals,
+            verticals=group_verticals,
+        )
 
     def compute_image_width(self, horizontals: List[int]) -> int:
         width = max(horizontals) + 1 if len(horizontals) else 1
@@ -294,8 +342,44 @@ class Diabolic:
         height = max(verticals) + 1 if len(verticals) else 1
         return self.SIZE * height + (self.SIZE // 3) + 1
 
-    def construct_image(self):
-        pass
+    def construct_image(
+        self,
+        groups: List[str],
+        horizontals: List[int],
+        verticals: List[int],
+    ) -> None:
+        self.place_consonants(
+            groups=groups,
+            horizontals=horizontals,
+            verticals=verticals,
+        )
+
+    def place_consonants(
+        self,
+        groups: List[str],
+        horizontals: List[int],
+        verticals: List[int],
+    ) -> None:
+        for i, group in enumerate(groups):
+            horizontal = horizontals[i] * self.SIZE
+            vertical = verticals[i] * self.SIZE
+
+            char = [c for c in group if not is_vowel(c)]
+            char = [
+                self.SPECIAL_CHARACTERS.get(c)
+                if c in self.SPECIAL_CHARACTERS.keys()
+                else c
+                for c in char
+            ]
+            char = [read_symbol_image(c).rotate(90 * self.angles[i]) for c in char]
+
+            for c in char:
+                self.base_image = paste_transparent_image(
+                    background=self.base_image,
+                    overlay=c,
+                    horizontal=int(horizontal + (self.SIZE * 0.5)),
+                    vertical=int(vertical + (self.SIZE * 0.25)),
+                )
 
     def build_data_url(self) -> str:
         pass
