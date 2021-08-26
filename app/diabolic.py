@@ -332,6 +332,9 @@ class Diabolic:
             groups=groups,
             horizontals=group_horizontals,
             verticals=group_verticals,
+            angles=angles,
+            start_caps=start_caps,
+            end_caps=end_caps,
         )
 
     def compute_image_width(self, horizontals: List[int]) -> int:
@@ -347,11 +350,22 @@ class Diabolic:
         groups: List[str],
         horizontals: List[int],
         verticals: List[int],
+        angles: List[int],
+        start_caps: List[Optional[int]],
+        end_caps: List[Optional[int]],
     ) -> None:
         self.place_consonants(
             groups=groups,
             horizontals=horizontals,
             verticals=verticals,
+            angles=angles,
+        )
+        self.place_caps(
+            groups=groups,
+            horizontals=horizontals,
+            verticals=verticals,
+            start_caps=start_caps,
+            end_caps=end_caps,
         )
 
     def place_consonants(
@@ -359,6 +373,7 @@ class Diabolic:
         groups: List[str],
         horizontals: List[int],
         verticals: List[int],
+        angles: List[int],
     ) -> None:
         for i, group in enumerate(groups):
             horizontal = horizontals[i] * self.SIZE
@@ -371,12 +386,44 @@ class Diabolic:
                 else c
                 for c in char
             ]
-            char = [read_symbol_image(c).rotate(90 * self.angles[i]) for c in char]
+            char = [read_symbol_image(c).rotate(90 * angles[i]) for c in char]
 
             for c in char:
                 self.base_image = paste_transparent_image(
                     background=self.base_image,
                     overlay=c,
+                    horizontal=int(horizontal + (self.SIZE * 0.5)),
+                    vertical=int(vertical + (self.SIZE * 0.25)),
+                )
+
+    def place_caps(
+        self,
+        groups: List[str],
+        horizontals: List[int],
+        verticals: List[int],
+        start_caps: List[int],
+        end_caps: List[int],
+    ):
+        for i in range(len(groups)):
+            horizontal = horizontals[i] * self.SIZE
+            vertical = verticals[i] * self.SIZE
+
+            if start_caps[i] is not None:
+                cap = read_symbol_image("cap").rotate(90 * start_caps[i])
+
+                self.base_image = paste_transparent_image(
+                    background=self.base_image,
+                    overlay=cap,
+                    horizontal=int(horizontal + (self.SIZE * 0.5)),
+                    vertical=int(vertical + (self.SIZE * 0.25)),
+                )
+
+            if end_caps[i] is not None:
+                cap = read_symbol_image("cap").rotate(90 * end_caps[i])
+
+                self.base_image = paste_transparent_image(
+                    background=self.base_image,
+                    overlay=cap,
                     horizontal=int(horizontal + (self.SIZE * 0.5)),
                     vertical=int(vertical + (self.SIZE * 0.25)),
                 )
