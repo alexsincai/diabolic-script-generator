@@ -301,11 +301,11 @@ class Diabolic:
             groups=groups,
             string=string,
         )
-        connects_before = compute_start_connectors(
+        connectors_before = compute_start_connectors(
             groups=groups,
             string=string,
         )
-        connects_after = compute_end_connectors(
+        connectors_after = compute_end_connectors(
             groups=groups,
             string=string,
         )
@@ -335,6 +335,8 @@ class Diabolic:
             angles=angles,
             start_caps=start_caps,
             end_caps=end_caps,
+            connectors_before=connectors_before,
+            connectors_after=connectors_after,
         )
 
     def compute_image_width(self, horizontals: List[int]) -> int:
@@ -353,19 +355,31 @@ class Diabolic:
         angles: List[int],
         start_caps: List[Optional[int]],
         end_caps: List[Optional[int]],
+        connectors_before: List[int],
+        connectors_after: List[int],
     ) -> None:
+
         self.place_consonants(
             groups=groups,
             horizontals=horizontals,
             verticals=verticals,
             angles=angles,
         )
+
         self.place_caps(
             groups=groups,
             horizontals=horizontals,
             verticals=verticals,
             start_caps=start_caps,
             end_caps=end_caps,
+        )
+
+        self.place_connectors(
+            groups=groups,
+            horizontals=horizontals,
+            verticals=verticals,
+            connectors_before=connectors_before,
+            connectors_after=connectors_after,
         )
 
     def place_consonants(
@@ -424,6 +438,40 @@ class Diabolic:
                 self.base_image = paste_transparent_image(
                     background=self.base_image,
                     overlay=cap,
+                    horizontal=int(horizontal + (self.SIZE * 0.5)),
+                    vertical=int(vertical + (self.SIZE * 0.25)),
+                )
+
+    def place_connectors(
+        self,
+        groups: List[str],
+        horizontals: List[int],
+        verticals: List[int],
+        connectors_before: List[int],
+        connectors_after: List[int],
+    ):
+        for i in range(len(groups)):
+            horizontal = horizontals[i] * self.SIZE
+            vertical = verticals[i] * self.SIZE
+
+            if connectors_before[i] is not None:
+                connect = read_symbol_image("connect")
+                connect = connect.rotate(90 * connectors_before[i])
+
+                self.base_image = paste_transparent_image(
+                    background=self.base_image,
+                    overlay=connect,
+                    horizontal=int(horizontal + (self.SIZE * 0.5)),
+                    vertical=int(vertical + (self.SIZE * 0.25)),
+                )
+
+            if connectors_after[i] is not None:
+                connect = read_symbol_image("connect")
+                connect = connect.rotate(90 * connectors_after[i])
+
+                self.base_image = paste_transparent_image(
+                    background=self.base_image,
+                    overlay=connect,
                     horizontal=int(horizontal + (self.SIZE * 0.5)),
                     vertical=int(vertical + (self.SIZE * 0.25)),
                 )
