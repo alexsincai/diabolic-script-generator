@@ -1,6 +1,6 @@
 from typing import List, Optional, Union
 from PIL import Image
-from re import sub, compile, MULTILINE
+from re import TEMPLATE, sub, compile, MULTILINE
 
 
 def clean_up_string(string: str) -> str:
@@ -284,7 +284,7 @@ def paste_transparent_image(
 
 class Diabolic:
     SIZE = 210
-    VOWEL = 50
+    VOWEL = 30
     SPECIAL_CHARACTERS = {
         "_": "blank",
         ",": "comma",
@@ -294,6 +294,56 @@ class Diabolic:
         "?": "question",
         "&": "repeat",
     }
+    TEMPLATES = [
+        dict(
+            before=[
+                [(60, 180)],
+                [(60, 180), (60, 150)],
+                [(60, 210), (60, 180), (60, 150)],
+            ],
+            after=[
+                [(180, 60)],
+                [(180, 60), (210, 60)],
+                [(150, 60), (180, 60), (210, 60)],
+            ],
+        ),
+        dict(
+            before=[
+                [(60, 30)],
+                [(60, 30), (60, 60)],
+                [(60, 0), (60, 30), (60, 60)],
+            ],
+            after=[
+                [(180, 60)],
+                [(180, 60), (210, 60)],
+                [(150, 60), (180, 60), (210, 60)],
+            ],
+        ),
+        dict(
+            before=[
+                [(150, 30)],
+                [(150, 30), (150, 60)],
+                [(150, 0), (150, 30), (150, 60)],
+            ],
+            after=[
+                [(30, 60)],
+                [(30, 60), (60, 60)],
+                [(0, 60), (30, 60), (60, 60)],
+            ],
+        ),
+        dict(
+            before=[
+                [(30, 60)],
+                [(30, 60), (60, 60)],
+                [(0, 60), (30, 60), (60, 60)],
+            ],
+            after=[
+                [(150, 150)],
+                [(150, 150), (180, 150)],
+                [(150, 120), (150, 150), (150, 180)],
+            ],
+        ),
+    ]
 
     def __init__(self, string: str) -> None:
         string = clean_up_string(string=string)
