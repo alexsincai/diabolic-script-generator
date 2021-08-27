@@ -3,7 +3,7 @@ from typing import Any, List, Optional, Union
 from PIL import Image
 
 
-def clean_up_string(string: str) -> str:
+def clean_up_string(string: str):
     string = string.lower().strip()
 
     string = re.sub(
@@ -44,12 +44,12 @@ def clean_up_string(string: str) -> str:
     return string.strip()
 
 
-def populate_array(template: List[int], base: List[Any]) -> List[int]:
+def populate_array(template: List[int], base: List[Any]):
     out = template * len(base)
     return out[: len(base)]
 
 
-def determine_vowel_positions(string: str) -> dict:
+def determine_vowel_positions(string: str):
     characters = [char for char in string]
     vowels = [char in "aeiouh&" for char in characters]
 
@@ -68,7 +68,7 @@ def determine_vowel_positions(string: str) -> dict:
     )
 
 
-def split_into_groups(string: str) -> List[dict[str, Union[str, Optional[int]]]]:
+def split_into_groups(string: str):
     pattern = r"[aeiouh&]{0,3}([bcdfgjklmnpqrstvwxyz_])\1?[aeiouh&]{0,3}"
     matches = [match for match in re.finditer(pattern, string, re.MULTILINE)]
 
@@ -126,7 +126,7 @@ def split_into_groups(string: str) -> List[dict[str, Union[str, Optional[int]]]]
     return output
 
 
-def read_symbol_image(name: str) -> Image:
+def read_symbol_image(name: str):
     from os.path import realpath, join, dirname
 
     return Image.open(realpath(join(dirname(__file__), "..", "assets", name + ".png")))
@@ -134,7 +134,7 @@ def read_symbol_image(name: str) -> Image:
 
 def paste_transparent_image(
     background: Image, overlay: Image, horizontal: int = 0, vertical: int = 0
-) -> Image:
+):
 
     layer = Image.new(mode="RGBA", size=background.size)
     layer.paste(
@@ -152,7 +152,7 @@ def place_character(
     base: Image,
     horizontal: int,
     vertical: int,
-) -> Image:
+):
     try:
         char = read_symbol_image(char)
         char = char.rotate(90 * angle)
@@ -231,7 +231,7 @@ class Diabolic:
         ),
     ]
 
-    def __init__(self, string: str) -> None:
+    def __init__(self, string: str):
         string = clean_up_string(string=string)
         groups = split_into_groups(string=string)
 
@@ -246,7 +246,7 @@ class Diabolic:
 
         self.construct_image(groups=groups)
 
-    def construct_image(self, groups: List[dict]) -> None:
+    def construct_image(self, groups: List[dict]):
 
         for group in groups:
 
@@ -318,10 +318,10 @@ class Diabolic:
 
             # # print(group.get("string"), group.get("positions"))
 
-    def show(self) -> None:
+    def show(self):
         self.base_image.show()
 
-    def build_data_url(self) -> None:
+    def build_data_url(self):
         from io import BytesIO
         from base64 import b64encode
 
