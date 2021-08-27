@@ -49,7 +49,7 @@ def populate_array(template: List[int], base: List[Any]) -> List[int]:
     return out[: len(base)]
 
 
-def determine_vowel_positions(string: str) -> dict[str, list]:
+def determine_vowel_positions(string: str) -> dict:
     characters = [char for char in string]
     vowels = [char in "aeiouh&" for char in characters]
 
