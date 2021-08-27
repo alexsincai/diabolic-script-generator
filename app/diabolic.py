@@ -334,13 +334,18 @@ def split_into_groups(string: str) -> List[dict[str, Union[str, Optional[int]]]]
 
     angles = populate_array(template=[1, 3, 2, 0], base=matches)
     angles[0] = 0
-    alt_angles = [(val + 1) % 4 for val in angles]
 
-    start_caps = [None] * len(matches)
-    end_caps = [None] * len(matches)
+    start_caps = populate_array(template=[2, 3, 2, 1], base=matches)
+    start_caps[0] = 0
 
-    start_connects = [None] * len(matches)
-    end_connects = [None] * len(matches)
+    end_caps = populate_array(template=[1, 3, 3, 0], base=matches)
+    end_caps[0] = 1
+
+    start_connects = populate_array(template=[2, 3, 2, 1], base=matches)
+    start_connects[0] = 0
+
+    end_connects = populate_array(template=[1, 0, 3, 0], base=matches)
+    end_connects[0] = 1
 
     columns = populate_array(template=[0, 1, 1, 0], base=matches)
 
@@ -350,16 +355,16 @@ def split_into_groups(string: str) -> List[dict[str, Union[str, Optional[int]]]]
         next = string[min(end, len(string) - 1)]
 
         if index == 0 or prev == " ":
-            start_caps[index] = angles[index]
+            start_connects[index] = None
 
         if index == len(matches) - 1 or next == " ":
-            end_caps[index] = alt_angles[index]
+            end_connects[index] = None
 
-        if index > 0 and prev != " ":
-            start_connects[index] = angles[index]
+        if prev != " " and index > 0:
+            start_caps[index] = None
 
-        if index < len(matches) - 1 and next != " ":
-            end_connects[index] = alt_angles[index]
+        if next != " " and index < len(matches) - 1:
+            end_caps[index] = None
 
         output.append(
             dict(
@@ -397,6 +402,28 @@ def paste_transparent_image(
     )
 
     return Image.alpha_composite(background, layer)
+
+
+def place_character(
+    char: str,
+    angle: int,
+    base: Image,
+    horizontal: int,
+    vertical: int,
+) -> Image:
+    try:
+        char = read_symbol_image(char)
+        char = char.rotate(90 * angle)
+
+        return paste_transparent_image(
+            background=base,
+            overlay=char,
+            horizontal=horizontal,
+            vertical=vertical,
+        )
+
+    except FileNotFoundError:
+        pass
 
 
 class Diabolic:
@@ -466,8 +493,8 @@ class Diabolic:
         string = clean_up_string(string=string)
         groups = split_into_groups(string=string)
 
-        image_width = max([g.get("column") + 1 for g in groups])
-        image_height = max([g.get("row") + 1 for g in groups])
+        image_width = max([g.get("column") + 1 for g in groups]) * self.SIZE
+        image_height = max([g.get("row") + 1 for g in groups]) * self.SIZE
 
         self.base_image = Image.new(
             mode="RGBA",
@@ -475,255 +502,82 @@ class Diabolic:
             size=(image_width, image_height),
         )
 
-        # string = clean_up_string(string=text)
-        # groups = split_into_groups(string=string)
-        # angles = compute_group_angles(groups=groups)
+        self.construct_image(groups=groups)
 
-        # start_caps = compute_start_caps(
-        #     groups=groups,
-        #     string=string,
-        # )
-        # end_caps = compute_end_caps(
-        #     groups=groups,
-        #     string=string,
-        # )
+    def construct_image(self, groups: List[dict]) -> None:
 
-        # connectors_before = compute_start_connectors(
-        #     groups=groups,
-        #     string=string,
-        # )
-        # connectors_after = compute_end_connectors(
-        #     groups=groups,
-        #     string=string,
-        # )
-        # group_horizontals = compute_group_horizontals(groups=groups)
-        # group_verticals = compute_group_verticals(groups=groups)
+        for group in groups:
 
-        # self.groups = [
-        #     dict(
-        #         chars=group,
-        #         angle=angles[i],
-        #         start_cap=start_caps[i],
-        #         end_cap=end_caps[i],
-        #         connect_before=connectors_before[i],
-        #         connect_after=connectors_after[i],
-        #         horizontal=group_horizontals[i],
-        #         vertical=group_verticals[i],
-        #     )
-        #     for i, group in enumerate(groups)
-        # ]
+            characters = [
+                self.SPECIAL_CHARACTERS.get(char)
+                if char in self.SPECIAL_CHARACTERS.keys()
+                else char
+                for char in group.get("string")
+            ]
 
-        # vowels = compute_vowel_locations(
-        #     groups=groups,
-        #     horizontals=group_horizontals,
-        #     verticals=group_verticals,
-        #     angles=angles,
-        # )
+            consonant = [
+                char
+                for i, char in enumerate(characters)
+                if not group.get("positions").get("vowels")[i]
+            ].pop()
 
-        # self.base_image = Image.new(
-        #     mode="RGBA",
-        #     color=(255, 255, 255, 0),
-        #     size=(
-        #         self.compute_image_width(horizontals=group_horizontals),
-        #         self.compute_image_height(verticals=group_verticals),
-        #     ),
-        # )
+            self.base_image = place_character(
+                char=consonant,
+                angle=group.get("angle"),
+                base=self.base_image,
+                horizontal=group.get("column") * self.SIZE,
+                vertical=group.get("row") * self.SIZE,
+            )
 
-        # self.construct_image(
-        #     groups=groups,
-        #     horizontals=group_horizontals,
-        #     verticals=group_verticals,
-        #     angles=angles,
-        #     start_caps=start_caps,
-        #     end_caps=end_caps,
-        #     connectors_before=connectors_before,
-        #     connectors_after=connectors_after,
-        #     vowels=vowels,
-        # )
+            if group.get("start_cap") is not None:
+                self.base_image = place_character(
+                    char="cap",
+                    angle=group.get("start_cap"),
+                    base=self.base_image,
+                    horizontal=group.get("column") * self.SIZE,
+                    vertical=group.get("row") * self.SIZE,
+                )
 
-    # def compute_image_width(self, horizontals: List[int]) -> int:
-    #     width = max(horizontals) + 1 if len(horizontals) else 1
-    #     return self.SIZE * (width + 1)
+            if group.get("end_cap") is not None:
+                self.base_image = place_character(
+                    char="cap",
+                    angle=group.get("end_cap"),
+                    base=self.base_image,
+                    horizontal=group.get("column") * self.SIZE,
+                    vertical=group.get("row") * self.SIZE,
+                )
 
-    # def compute_image_height(self, verticals: List[int]) -> int:
-    #     height = max(verticals) + 1 if len(verticals) else 1
-    #     return self.SIZE * height + (self.SIZE // 3) + 1
+            if group.get("start_connect") is not None:
+                self.base_image = place_character(
+                    char="connect",
+                    angle=group.get("start_connect"),
+                    base=self.base_image,
+                    horizontal=group.get("column") * self.SIZE,
+                    vertical=group.get("row") * self.SIZE,
+                )
 
-    # def construct_image(
-    #     self,
-    #     groups: List[str],
-    #     horizontals: List[int],
-    #     verticals: List[int],
-    #     angles: List[int],
-    #     start_caps: List[Optional[int]],
-    #     end_caps: List[Optional[int]],
-    #     connectors_before: List[int],
-    #     connectors_after: List[int],
-    #     vowels: List[dict[str, Union[str, int]]],
-    # ) -> None:
+            if group.get("end_connect") is not None:
+                self.base_image = place_character(
+                    char="connect",
+                    angle=group.get("end_connect"),
+                    base=self.base_image,
+                    horizontal=group.get("column") * self.SIZE,
+                    vertical=group.get("row") * self.SIZE,
+                )
 
-    #     self.place_consonants(
-    #         groups=groups,
-    #         horizontals=horizontals,
-    #         verticals=verticals,
-    #         angles=angles,
-    #     )
+    def show(self) -> None:
+        self.base_image.show()
 
-    #     self.place_caps(
-    #         groups=groups,
-    #         horizontals=horizontals,
-    #         verticals=verticals,
-    #         start_caps=start_caps,
-    #         end_caps=end_caps,
-    #     )
+    def build_data_url(self) -> None:
+        from io import BytesIO
+        from base64 import b64encode
 
-    #     self.place_connectors(
-    #         groups=groups,
-    #         horizontals=horizontals,
-    #         verticals=verticals,
-    #         connectors_before=connectors_before,
-    #         connectors_after=connectors_after,
-    #     )
+        buffer = BytesIO()
+        self.base_image.save(buffer, format="PNG")
+        buffer.seek(0)
 
-    #     self.place_vowels(vowels=vowels)
-
-    # def place_consonants(
-    #     self,
-    #     groups: List[str],
-    #     horizontals: List[int],
-    #     verticals: List[int],
-    #     angles: List[int],
-    # ) -> None:
-    #     for i, group in enumerate(groups):
-    #         horizontal = horizontals[i] * self.SIZE
-    #         vertical = verticals[i] * self.SIZE
-
-    #         char = [c for c in group if not is_vowel(c)]
-    #         char = [
-    #             self.SPECIAL_CHARACTERS.get(c)
-    #             if c in self.SPECIAL_CHARACTERS.keys()
-    #             else c
-    #             for c in char
-    #         ]
-    #         char = [read_symbol_image(c).rotate(90 * angles[i]) for c in char]
-
-    #         for c in char:
-    #             self.base_image = paste_transparent_image(
-    #                 background=self.base_image,
-    #                 overlay=c,
-    #                 horizontal=int(horizontal + (self.SIZE * 0.5)),
-    #                 vertical=int(vertical + (self.SIZE * 0.25)),
-    #             )
-
-    # def place_caps(
-    #     self,
-    #     groups: List[str],
-    #     horizontals: List[int],
-    #     verticals: List[int],
-    #     start_caps: List[int],
-    #     end_caps: List[int],
-    # ) -> None:
-    #     for i in range(len(groups)):
-    #         horizontal = horizontals[i] * self.SIZE
-    #         vertical = verticals[i] * self.SIZE
-
-    #         if start_caps[i] is not None:
-    #             cap = read_symbol_image("cap").rotate(90 * start_caps[i])
-
-    #             self.base_image = paste_transparent_image(
-    #                 background=self.base_image,
-    #                 overlay=cap,
-    #                 horizontal=int(horizontal + (self.SIZE * 0.5)),
-    #                 vertical=int(vertical + (self.SIZE * 0.25)),
-    #             )
-
-    #         if end_caps[i] is not None:
-    #             cap = read_symbol_image("cap").rotate(90 * end_caps[i])
-
-    #             self.base_image = paste_transparent_image(
-    #                 background=self.base_image,
-    #                 overlay=cap,
-    #                 horizontal=int(horizontal + (self.SIZE * 0.5)),
-    #                 vertical=int(vertical + (self.SIZE * 0.25)),
-    #             )
-
-    # def place_connectors(
-    #     self,
-    #     groups: List[str],
-    #     horizontals: List[int],
-    #     verticals: List[int],
-    #     connectors_before: List[int],
-    #     connectors_after: List[int],
-    # ) -> None:
-    #     for i in range(len(groups)):
-    #         horizontal = horizontals[i] * self.SIZE
-    #         vertical = verticals[i] * self.SIZE
-
-    #         if connectors_before[i] is not None:
-    #             connect = read_symbol_image("connect")
-    #             connect = connect.rotate(90 * connectors_before[i])
-
-    #             self.base_image = paste_transparent_image(
-    #                 background=self.base_image,
-    #                 overlay=connect,
-    #                 horizontal=int(horizontal + (self.SIZE * 0.5)),
-    #                 vertical=int(vertical + (self.SIZE * 0.25)),
-    #             )
-
-    #         if connectors_after[i] is not None:
-    #             connect = read_symbol_image("connect")
-    #             connect = connect.rotate(90 * connectors_after[i])
-
-    #             self.base_image = paste_transparent_image(
-    #                 background=self.base_image,
-    #                 overlay=connect,
-    #                 horizontal=int(horizontal + (self.SIZE * 0.5)),
-    #                 vertical=int(vertical + (self.SIZE * 0.25)),
-    #             )
-
-    # def place_vowels(self, vowels: List[dict[str, Union[str, int]]]) -> None:
-    #     for vowel in vowels:
-    #         try:
-    #             char = vowel.get("character")
-    #             char = (
-    #                 self.SPECIAL_CHARACTERS.get(char)
-    #                 if char in self.SPECIAL_CHARACTERS.keys()
-    #                 else char
-    #             )
-
-    #             horizontal = self.SIZE * vowel.get("horizontal")
-    #             horizontal += [-0.15, 0, 0.85][
-    #                 vowel.get("horizontal_offset")
-    #             ] * self.SIZE
-
-    #             vertical = self.SIZE * vowel.get("vertical")
-    #             vertical += self.VOWEL * vowel.get("vertical_offset")
-    #             vertical += self.SIZE * 0.25
-
-    #             if vowel.get("character") != "h":
-    #                 self.base_image = paste_transparent_image(
-    #                     background=self.base_image,
-    #                     overlay=read_symbol_image(char),
-    #                     horizontal=int(horizontal),
-    #                     vertical=int(vertical),
-    #                 )
-
-    #         except FileNotFoundError:
-    #             pass
-
-    # def show(self) -> None:
-    #     self.base_image.show()
-
-    # def build_data_url(self) -> None:
-    #     from io import BytesIO
-    #     from base64 import b64encode
-
-    #     buffer = BytesIO()
-    #     self.base_image.save(buffer, format="PNG")
-    #     buffer.seek(0)
-
-    #     output = buffer.getvalue()
-    #     return "data:image/png;base64," + b64encode(output).decode()
+        output = buffer.getvalue()
+        return "data:image/png;base64," + b64encode(output).decode()
 
 
 if __name__ == "__main__":
@@ -732,8 +586,8 @@ if __name__ == "__main__":
     os.system("clear")
 
     strings = [
-        # "necromancer bee",
-        "hermit crane",
+        "necromancer bee",
+        # "hermit crane",
         # "sorrow hawk",
         # "hehe",
         # "this was a dumb idea"
@@ -742,3 +596,4 @@ if __name__ == "__main__":
     for string in strings:
         s = Diabolic(string)
         print(s.__dict__)
+        s.show()
