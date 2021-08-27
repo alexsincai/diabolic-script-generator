@@ -52,17 +52,21 @@ def populate_array(template: List[int], base: List[Any]):
 def determine_vowel_positions(string: str):
     characters = [char for char in string]
     vowels = [char in "aeiouh&" for char in characters]
+    base = vowels.index(False)
 
-    distances = [abs(i - vowels.index(False)) for i in range(len(vowels))]
+    distances = [abs(i - base) for i in range(len(vowels))]
 
-    befores = [i < vowels.index(False) for i in range(len(vowels))]
+    befores = [i < base for i in range(len(vowels))]
     befores = [distances[i] - 1 for i, b in enumerate(befores) if b and vowels[i]]
 
-    afters = [i > vowels.index(False) for i in range(len(vowels))]
+    afters = [i > base for i in range(len(vowels))]
     afters = [distances[i] - 1 for i, a in enumerate(afters) if a and vowels[i]]
+
+    print(befores[::-1] + [None] + afters)
 
     return dict(
         vowels=vowels,
+        base=base,
         before=befores[::-1],
         after=afters,
     )
@@ -80,7 +84,7 @@ def split_into_groups(string: str):
     start_caps = populate_array(template=[2, 3, 2, 1], base=matches)
     start_caps[0] = 0
 
-    end_caps = populate_array(template=[1, 3, 3, 0], base=matches)
+    end_caps = populate_array(template=[1, 3, 0, 0], base=matches)
     end_caps[0] = 1
 
     start_connects = populate_array(template=[2, 3, 2, 1], base=matches)
@@ -183,50 +187,50 @@ class Diabolic:
     TEMPLATES = [
         dict(
             before=[
-                [(60, 180)],
-                [(60, 180), (60, 150)],
-                [(60, 210), (60, 180), (60, 150)],
+                [(2, 6)],
+                [(2, 6), (2, 5)],
+                [(2, 7), (2, 6), (2, 5)],
             ],
             after=[
-                [(180, 60)],
-                [(180, 60), (210, 60)],
-                [(150, 60), (180, 60), (210, 60)],
+                [(6, 2)],
+                [(6, 2), (7, 2)],
+                [(5, 2), (6, 2), (7, 2)],
             ],
         ),
         dict(
             before=[
-                [(60, 30)],
-                [(60, 30), (60, 60)],
-                [(60, 0), (60, 30), (60, 60)],
+                [(2, 1)],
+                [(2, 1), (2, 2)],
+                [(2, 0), (2, 1), (2, 2)],
             ],
             after=[
-                [(180, 60)],
-                [(180, 60), (210, 60)],
-                [(150, 60), (180, 60), (210, 60)],
+                [(6, 2)],
+                [(6, 2), (7, 2)],
+                [(5, 2), (6, 2), (7, 2)],
             ],
         ),
         dict(
             before=[
-                [(150, 30)],
-                [(150, 30), (150, 60)],
-                [(150, 0), (150, 30), (150, 60)],
+                [(5, 1)],
+                [(5, 1), (5, 2)],
+                [(5, 0), (5, 1), (5, 2)],
             ],
             after=[
-                [(30, 60)],
-                [(30, 60), (60, 60)],
-                [(0, 60), (30, 60), (60, 60)],
+                [(1, 2)],
+                [(1, 2), (2, 2)],
+                [(0, 2), (1, 2), (2, 2)],
             ],
         ),
         dict(
             before=[
-                [(30, 60)],
-                [(30, 60), (60, 60)],
-                [(0, 60), (30, 60), (60, 60)],
+                [(1, 2)],
+                [(1, 2), (2, 2)],
+                [(0, 2), (1, 2), (2, 2)],
             ],
             after=[
-                [(150, 150)],
-                [(150, 150), (180, 150)],
-                [(150, 120), (150, 150), (150, 180)],
+                [(5, 5)],
+                [(5, 5), (6, 5)],
+                [(5, 4), (5, 5), (5, 6)],
             ],
         ),
     ]
@@ -310,13 +314,60 @@ class Diabolic:
                     vertical=v,
                 )
 
-            # index = 0
-            # for i, c in enumerate(characters):
-            #     if group.get("positions").get("vowels")[i]:
-            #         for before in group.get("positions").get("before"):
-            #             print(before)
+            vowels = []
+            pos = group.get("positions")
 
-            # # print(group.get("string"), group.get("positions"))
+            for index, character in enumerate(characters):
+
+                iterator = index
+
+                if not pos.get("vowels")[index]:
+                    iterator -= 1
+
+                if pos.get("vowels")[index] and index > pos.get("base"):
+                    iterator -= pos.get("base")
+
+                #     if pos.get("vowels")[index]:
+                #         if iterator < len(pos.get("before")):
+
+                #             angle = self.TEMPLATES[group.get("angle")]
+
+                print(character, iterator, pos)
+
+            #     before = len(pos.get("before"))
+            #     after = len(pos.get("after"))
+
+            #     if before:
+            #         for position in pos.get("before"):
+
+            #             x, y = angle.get("before")[before - 1][position]
+            #             vowels.append(
+            #                 dict(
+            #                     character=character,
+            #                     horizontal=h + (x * self.VOWEL),
+            #                     vertical=v + (y * self.VOWEL),
+            #                 )
+            #             )
+            #             break
+            #         continue
+
+            #     if after:
+            #         for position in pos.get("after"):
+
+            #             x, y = angle.get("after")[after - 1][position]
+
+            #             vowels.append(
+            #                 dict(
+            #                     character=character,
+            #                     horizontal=h + (x * self.VOWEL),
+            #                     vertical=v + (y * self.VOWEL),
+            #                 )
+            #             )
+            #             break
+            #         continue
+
+            # for vowel in vowels:
+            #     print(vowel)
 
     def show(self):
         self.base_image.show()
@@ -338,13 +389,7 @@ if __name__ == "__main__":
 
     os.system("clear")
 
-    strings = [
-        "necromancer bee",
-        # "hermit crane",
-        # "sorrow hawk",
-        # "hehe",
-        # "this was a dumb idea"
-    ]
+    strings = ["hane"]
 
     for string in strings:
         s = Diabolic(string)
