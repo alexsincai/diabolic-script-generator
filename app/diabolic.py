@@ -62,8 +62,6 @@ def determine_vowel_positions(string: str):
     afters = [i > base for i in range(len(vowels))]
     afters = [distances[i] - 1 for i, a in enumerate(afters) if a and vowels[i]]
 
-    print(befores[::-1] + [None] + afters)
-
     return dict(
         vowels=vowels,
         base=base,
@@ -84,7 +82,7 @@ def split_into_groups(string: str):
     start_caps = populate_array(template=[2, 3, 2, 1], base=matches)
     start_caps[0] = 0
 
-    end_caps = populate_array(template=[1, 3, 0, 0], base=matches)
+    end_caps = populate_array(template=[1, 0, 3, 0], base=matches)
     end_caps[0] = 1
 
     start_connects = populate_array(template=[2, 3, 2, 1], base=matches)
@@ -156,6 +154,7 @@ def place_character(
     base: Image,
     horizontal: int,
     vertical: int,
+    offset: int,
 ):
     try:
         char = read_symbol_image(char)
@@ -164,8 +163,8 @@ def place_character(
         return paste_transparent_image(
             background=base,
             overlay=char,
-            horizontal=horizontal,
-            vertical=vertical,
+            horizontal=horizontal + offset,
+            vertical=vertical + offset,
         )
 
     except FileNotFoundError:
@@ -187,14 +186,14 @@ class Diabolic:
     TEMPLATES = [
         dict(
             before=[
-                [(2, 6)],
-                [(2, 6), (2, 5)],
-                [(2, 7), (2, 6), (2, 5)],
+                [(1, 6)],
+                [(1, 6), (1, 5)],
+                [(1, 7), (1, 6), (1, 5)],
             ],
             after=[
-                [(6, 2)],
-                [(6, 2), (7, 2)],
-                [(5, 2), (6, 2), (7, 2)],
+                [(6, 1)],
+                [(6, 1), (7, 1)],
+                [(5, 1), (6, 1), (7, 1)],
             ],
         ),
         dict(
@@ -217,8 +216,8 @@ class Diabolic:
             ],
             after=[
                 [(1, 2)],
-                [(1, 2), (2, 2)],
-                [(0, 2), (1, 2), (2, 2)],
+                [(1, 2), (1, 3)],
+                [(1, 1), (1, 2), (1, 3)],
             ],
         ),
         dict(
@@ -228,9 +227,9 @@ class Diabolic:
                 [(0, 2), (1, 2), (2, 2)],
             ],
             after=[
-                [(5, 5)],
-                [(5, 5), (6, 5)],
-                [(5, 4), (5, 5), (5, 6)],
+                [(5, 6)],
+                [(5, 6), (5, 7)],
+                [(5, 5), (5, 6), (5, 7)],
             ],
         ),
     ]
@@ -238,6 +237,7 @@ class Diabolic:
     def __init__(self, string: str):
         string = clean_up_string(string=string)
         groups = split_into_groups(string=string)
+        print([g["string"] for g in groups])
 
         image_width = max([g.get("column") + 1 for g in groups]) * self.SIZE
         image_height = max([g.get("row") + 1 for g in groups]) * self.SIZE
@@ -245,7 +245,10 @@ class Diabolic:
         self.base_image = Image.new(
             mode="RGBA",
             color=(255, 255, 255, 0),
-            size=(image_width, image_height),
+            size=(
+                image_width + self.SIZE,
+                image_height + self.SIZE,
+            ),
         )
 
         self.construct_image(groups=groups)
@@ -253,6 +256,12 @@ class Diabolic:
     def construct_image(self, groups: List[dict]):
 
         for group in groups:
+
+            pos = group.get("positions")
+            angle = self.TEMPLATES[group.get("angle")]
+
+            h = group.get("column") * self.SIZE
+            v = group.get("row") * self.SIZE
 
             characters = [
                 self.SPECIAL_CHARACTERS.get(char)
@@ -262,13 +271,24 @@ class Diabolic:
             ]
 
             consonant = [
-                char
-                for i, char in enumerate(characters)
-                if not group.get("positions").get("vowels")[i]
+                char for i, char in enumerate(characters) if not pos.get("vowels")[i]
             ].pop()
 
-            h = group.get("column") * self.SIZE
-            v = group.get("row") * self.SIZE
+            vowels = [char for i, char in enumerate(characters) if pos.get("vowels")[i]]
+
+            before = (
+                angle.get("before")[len(pos.get("before")) - 1]
+                if len(pos.get("before"))
+                else []
+            )
+            after = (
+                angle.get("after")[len(pos.get("after")) - 1]
+                if len(pos.get("after"))
+                else []
+            )
+            vowel_pos = [*before, *after]
+            vowel_pos = [(w[0] * self.VOWEL, w[1] * self.VOWEL) for w in vowel_pos]
+            # vowel_pos = [(w[0] + h, w[1] + 1) for w in vowel_pos]
 
             self.base_image = place_character(
                 char=consonant,
@@ -276,6 +296,7 @@ class Diabolic:
                 base=self.base_image,
                 horizontal=h,
                 vertical=v,
+                offset=self.SIZE // 2,
             )
 
             if group.get("start_cap") is not None:
@@ -285,6 +306,7 @@ class Diabolic:
                     base=self.base_image,
                     horizontal=h,
                     vertical=v,
+                    offset=self.SIZE // 2,
                 )
 
             if group.get("end_cap") is not None:
@@ -294,6 +316,7 @@ class Diabolic:
                     base=self.base_image,
                     horizontal=h,
                     vertical=v,
+                    offset=self.SIZE // 2,
                 )
 
             if group.get("start_connect") is not None:
@@ -303,6 +326,7 @@ class Diabolic:
                     base=self.base_image,
                     horizontal=h,
                     vertical=v,
+                    offset=self.SIZE // 2,
                 )
 
             if group.get("end_connect") is not None:
@@ -310,64 +334,21 @@ class Diabolic:
                     char="connect",
                     angle=group.get("end_connect"),
                     base=self.base_image,
-                    horizontal=group.get("column") * self.SIZE,
+                    horizontal=h,
                     vertical=v,
+                    offset=self.SIZE // 2,
                 )
 
-            vowels = []
-            pos = group.get("positions")
-
-            for index, character in enumerate(characters):
-
-                iterator = index
-
-                if not pos.get("vowels")[index]:
-                    iterator -= 1
-
-                if pos.get("vowels")[index] and index > pos.get("base"):
-                    iterator -= pos.get("base")
-
-                #     if pos.get("vowels")[index]:
-                #         if iterator < len(pos.get("before")):
-
-                #             angle = self.TEMPLATES[group.get("angle")]
-
-                print(character, iterator, pos)
-
-            #     before = len(pos.get("before"))
-            #     after = len(pos.get("after"))
-
-            #     if before:
-            #         for position in pos.get("before"):
-
-            #             x, y = angle.get("before")[before - 1][position]
-            #             vowels.append(
-            #                 dict(
-            #                     character=character,
-            #                     horizontal=h + (x * self.VOWEL),
-            #                     vertical=v + (y * self.VOWEL),
-            #                 )
-            #             )
-            #             break
-            #         continue
-
-            #     if after:
-            #         for position in pos.get("after"):
-
-            #             x, y = angle.get("after")[after - 1][position]
-
-            #             vowels.append(
-            #                 dict(
-            #                     character=character,
-            #                     horizontal=h + (x * self.VOWEL),
-            #                     vertical=v + (y * self.VOWEL),
-            #                 )
-            #             )
-            #             break
-            #         continue
-
-            # for vowel in vowels:
-            #     print(vowel)
+            if len(vowels):
+                for i in range(len(vowels)):
+                    self.base_image = place_character(
+                        char=vowels[i],
+                        angle=0,
+                        base=self.base_image,
+                        horizontal=vowel_pos[i][0] + h,
+                        vertical=vowel_pos[i][1] + v,
+                        offset=self.SIZE // 2,
+                    )
 
     def show(self):
         self.base_image.show()
@@ -389,7 +370,11 @@ if __name__ == "__main__":
 
     os.system("clear")
 
-    strings = ["hane"]
+    # TODO - only first block has before?
+    strings = [
+        # "oqoworotoyo",
+        "qwaratay",
+    ]
 
     for string in strings:
         s = Diabolic(string)
