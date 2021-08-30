@@ -1,9 +1,9 @@
 import re
-from typing import Any, List, Optional, Union
+from typing import Any, List, Union
 from PIL import Image
 
 
-def clean_up_string(string: str):
+def clean_up_string(string: str) -> str:
     string = string.lower().strip()
 
     string = re.sub(
@@ -27,9 +27,17 @@ def clean_up_string(string: str):
             string=string,
             flags=re.MULTILINE,
         )
+
     string = re.sub(
         pattern=r"(\s)([aeiouh&])(\s)",
         repl=r"\1\2_\3",
+        string=string,
+        flags=re.MULTILINE,
+    )
+
+    string = re.sub(
+        pattern=r"([.,:?!])(\s?)",
+        repl=r" \1\2",
         string=string,
         flags=re.MULTILINE,
     )
@@ -44,12 +52,12 @@ def clean_up_string(string: str):
     return string.strip()
 
 
-def populate_array(template: List[int], base: List[Any]):
+def populate_array(template: List[int], base: List[Any]) -> List[Any]:
     out = template * len(base)
     return out[: len(base)]
 
 
-def determine_vowel_positions(string: str):
+def determine_vowel_positions(string: str) -> dict[str, Union[bool, int]]:
     characters = [char for char in string]
     vowels = [char in "aeiouh&" for char in characters]
     base = vowels.index(False)
@@ -64,13 +72,14 @@ def determine_vowel_positions(string: str):
 
     return dict(
         vowels=vowels,
-        base=base,
-        before=befores[::-1],
+        before=befores,
         after=afters,
     )
 
 
-def split_into_groups(string: str):
+def split_into_groups(
+    string: str,
+) -> dict[str, Union[str, dict, int]]:
     pattern = r"[aeiouh&]{0,3}([bcdfgjklmnpqrstvwxyz_])\1?[aeiouh&]{0,3}"
     matches = [match for match in re.finditer(pattern, string, re.MULTILINE)]
 
@@ -124,11 +133,11 @@ def split_into_groups(string: str):
             )
         )
 
-    output = [elem for elem in output if elem.get("string") != "_"]
+    output = [elem for elem in output if elem["string"] != "_"]
     return output
 
 
-def read_symbol_image(name: str):
+def read_symbol_image(name: str) -> Image:
     from os.path import realpath, join, dirname
 
     return Image.open(realpath(join(dirname(__file__), "..", "assets", name + ".png")))
@@ -136,7 +145,7 @@ def read_symbol_image(name: str):
 
 def paste_transparent_image(
     background: Image, overlay: Image, horizontal: int = 0, vertical: int = 0
-):
+) -> Image:
 
     layer = Image.new(mode="RGBA", size=background.size)
     layer.paste(
@@ -155,7 +164,7 @@ def place_character(
     horizontal: int,
     vertical: int,
     offset: int,
-):
+) -> Image:
     try:
         char = read_symbol_image(char)
         char = char.rotate(90 * angle)
@@ -186,61 +195,73 @@ class Diabolic:
     TEMPLATES = [
         dict(
             before=[
-                [(1, 6)],
-                [(1, 6), (1, 5)],
-                [(1, 7), (1, 6), (1, 5)],
+                [(1, 5)],
+                [(1, 5.5), (1, 4.5)],
+                [(1, 6), (1, 5), (1, 4)],
             ],
-            after=[
-                [(6, 1)],
-                [(6, 1), (7, 1)],
-                [(5, 1), (6, 1), (7, 1)],
-            ],
+            after=dict(
+                single=[
+                    [(5, 1.5)],
+                    [(4.5, 1.5), (5.5, 1.5)],
+                    [(4, 1.5), (5, 1.5), (6, 1.5)],
+                ],
+                multiple=[
+                    [(6.5, 1.5)],
+                    [(5.5, 1.5), (7.5, 1.5)],
+                    [(5, 1.5), (6.5, 1.5), (8, 1.5)],
+                ],
+            ),
         ),
         dict(
-            before=[
-                [(2, 1)],
-                [(2, 1), (2, 2)],
-                [(2, 0), (2, 1), (2, 2)],
-            ],
-            after=[
-                [(6, 2)],
-                [(6, 2), (7, 2)],
-                [(5, 2), (6, 2), (7, 2)],
-            ],
+            after=dict(
+                single=[
+                    [(5.5, 1)],
+                    [(5, 1), (6, 1)],
+                    [(4.5, 1), (5.5, 1), (6.5, 1)],
+                ],
+                multiple=[
+                    [(6.5, 1)],
+                    [(6, 1), (7.5, 1)],
+                    [(5, 1), (6.5, 1), (8, 1)],
+                ],
+            ),
         ),
         dict(
-            before=[
-                [(5, 1)],
-                [(5, 1), (5, 2)],
-                [(5, 0), (5, 1), (5, 2)],
-            ],
-            after=[
-                [(1, 2)],
-                [(1, 2), (1, 3)],
-                [(1, 1), (1, 2), (1, 3)],
-            ],
+            after=dict(
+                single=[
+                    [(1, 0.5)],
+                    [(0.5, 0.5), (1.5, 0.5)],
+                    [(0, 0.5), (1, 0.5), (2, 0.5)],
+                ],
+                multiple=[
+                    [(0, 0.5)],
+                    [(-0.5, 0.5), (0.5, 0.5)],
+                    [(-1, 0.5), (0, 0.5), (1, 0.5)],
+                ],
+            ),
         ),
         dict(
-            before=[
-                [(1, 2)],
-                [(1, 2), (2, 2)],
-                [(0, 2), (1, 2), (2, 2)],
-            ],
-            after=[
-                [(5, 6)],
-                [(5, 6), (5, 7)],
-                [(5, 5), (5, 6), (5, 7)],
-            ],
+            after=dict(
+                single=[
+                    [(6.5, 5)],
+                    [(6.5, 4.5), (6.5, 5.5)],
+                    [(6.5, 4), (6.5, 5), (6.5, 6)],
+                ],
+                multiple=[
+                    [(6.5, 6.5)],
+                    [(6.5, 5.5), (6.5, 7)],
+                    [(6.5, 4.5), (6.5, 6), (6.5, 8)],
+                ],
+            ),
         ),
     ]
 
     def __init__(self, string: str):
         string = clean_up_string(string=string)
         groups = split_into_groups(string=string)
-        print([g["string"] for g in groups])
 
-        image_width = max([g.get("column") + 1 for g in groups]) * self.SIZE
-        image_height = max([g.get("row") + 1 for g in groups]) * self.SIZE
+        image_width = max([g["column"] + 1 for g in groups]) * self.SIZE
+        image_height = max([g["row"] + 1 for g in groups]) * self.SIZE
 
         self.base_image = Image.new(
             mode="RGBA",
@@ -253,86 +274,87 @@ class Diabolic:
 
         self.construct_image(groups=groups)
 
-    def construct_image(self, groups: List[dict]):
+    def construct_image(self, groups: List[dict]) -> None:
 
         for group in groups:
+            pos = group["positions"]
+            angle = self.TEMPLATES[group["angle"]]
 
-            pos = group.get("positions")
-            angle = self.TEMPLATES[group.get("angle")]
-
-            h = group.get("column") * self.SIZE
-            v = group.get("row") * self.SIZE
+            h = group["column"] * self.SIZE
+            v = group["row"] * self.SIZE
 
             characters = [
-                self.SPECIAL_CHARACTERS.get(char)
+                self.SPECIAL_CHARACTERS[char]
                 if char in self.SPECIAL_CHARACTERS.keys()
                 else char
-                for char in group.get("string")
+                for char in group["string"]
             ]
 
             consonant = [
-                char for i, char in enumerate(characters) if not pos.get("vowels")[i]
+                character
+                for index, character in enumerate(characters)
+                if not pos["vowels"][index]
             ].pop()
 
-            vowels = [char for i, char in enumerate(characters) if pos.get("vowels")[i]]
+            vowels = [
+                character
+                for index, character in enumerate(characters)
+                if pos["vowels"][index]
+            ]
 
-            before = (
-                angle.get("before")[len(pos.get("before")) - 1]
-                if len(pos.get("before"))
-                else []
-            )
-            after = (
-                angle.get("after")[len(pos.get("after")) - 1]
-                if len(pos.get("after"))
-                else []
-            )
+            lb = len(pos["before"])
+            before = angle["before"][lb - 1] if lb else []
+
+            la = len(pos["after"])
+            sm = "single" if group["end_cap"] is not None else "multiple"
+            after = angle["after"][sm][la - 1] if la else []
+
             vowel_pos = [*before, *after]
             vowel_pos = [(w[0] * self.VOWEL, w[1] * self.VOWEL) for w in vowel_pos]
-            # vowel_pos = [(w[0] + h, w[1] + 1) for w in vowel_pos]
 
             self.base_image = place_character(
                 char=consonant,
-                angle=group.get("angle"),
+                angle=group["angle"],
                 base=self.base_image,
                 horizontal=h,
                 vertical=v,
                 offset=self.SIZE // 2,
             )
 
-            if group.get("start_cap") is not None:
+            if group["start_cap"] is not None:
                 self.base_image = place_character(
                     char="cap",
-                    angle=group.get("start_cap"),
+                    angle=group["start_cap"],
                     base=self.base_image,
                     horizontal=h,
                     vertical=v,
                     offset=self.SIZE // 2,
                 )
 
-            if group.get("end_cap") is not None:
+            if group["end_cap"] is not None:
                 self.base_image = place_character(
                     char="cap",
-                    angle=group.get("end_cap"),
+                    angle=group["end_cap"],
                     base=self.base_image,
                     horizontal=h,
                     vertical=v,
                     offset=self.SIZE // 2,
                 )
 
-            if group.get("start_connect") is not None:
+            if group["start_connect"] is not None:
                 self.base_image = place_character(
                     char="connect",
-                    angle=group.get("start_connect"),
+                    angle=group["start_connect"],
                     base=self.base_image,
                     horizontal=h,
                     vertical=v,
                     offset=self.SIZE // 2,
                 )
 
-            if group.get("end_connect") is not None:
+            if group["end_connect"] is not None:
                 self.base_image = place_character(
                     char="connect",
-                    angle=group.get("end_connect"),
+                    angle=group["end_connect"],
                     base=self.base_image,
                     horizontal=h,
                     vertical=v,
@@ -345,15 +367,15 @@ class Diabolic:
                         char=vowels[i],
                         angle=0,
                         base=self.base_image,
-                        horizontal=vowel_pos[i][0] + h,
-                        vertical=vowel_pos[i][1] + v,
+                        horizontal=int(vowel_pos[i][0] + h),
+                        vertical=int(vowel_pos[i][1] + v),
                         offset=self.SIZE // 2,
                     )
 
-    def show(self):
+    def show(self) -> None:
         self.base_image.show()
 
-    def build_data_url(self):
+    def build_data_url(self) -> str:
         from io import BytesIO
         from base64 import b64encode
 
@@ -370,11 +392,7 @@ if __name__ == "__main__":
 
     os.system("clear")
 
-    # TODO - only first block has before?
-    strings = [
-        # "oqoworotoyo",
-        "qwaratay",
-    ]
+    strings = ["blood vulture"]
 
     for string in strings:
         s = Diabolic(string)
