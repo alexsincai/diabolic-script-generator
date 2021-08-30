@@ -385,15 +385,3 @@ class Diabolic:
 
         output = buffer.getvalue()
         return "data:image/png;base64," + b64encode(output).decode()
-
-
-if __name__ == "__main__":
-    import os
-
-    os.system("clear")
-
-    strings = ["blood vulture"]
-
-    for string in strings:
-        s = Diabolic(string)
-        s.show()
