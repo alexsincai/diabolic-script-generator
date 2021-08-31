@@ -14,21 +14,11 @@ def index():
         if request.method in ["GET", "POST"]
         else None
     )
-    url = None
+    url = Diabolic(text).data_url if text is not None else None
     error = None
 
-    if text is not None:
-        try:
-            image = Diabolic(text)
-            url = image.build_data_url()
-
-            if request.is_json:
-                return jsonify({"url": url})
-
-        except ValueError as e:
-            error = e
-            if request.is_json:
-                return jsonify({"error": str(error)})
+    if request.is_json:
+        return jsonify({"url": url,})
 
     return render_template(
         "index.html",
