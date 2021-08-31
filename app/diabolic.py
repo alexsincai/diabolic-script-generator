@@ -71,14 +71,6 @@ def split_into_groups(string: str) -> List[dict[str, Optional[Union[int, List[st
     ):
         start, end = match.span()
 
-        consonant_base = [c not in "aeiouh&" for c in match.group(0)].index(True)
-
-        vowels_before = [c in "aeiouh&" for c in match.group(0)[:consonant_base]]
-        vowels_before = [i for i, c in enumerate(vowels_before) if c]
-
-        vowels_after = [c in "aeiouh&" for c in match.group(0)[consonant_base:]]
-        vowels_after = [i - 1 for i, c in enumerate(vowels_after) if c]
-
         temp = dict(
             letters=[character for character in match.group(0)],
             angle=[1, 3, 2, 0][index % 4] if index != 0 else 5,
@@ -118,6 +110,8 @@ class Glyph:
         ".": "stop",
     }
 
+    TEMPLATES = []
+
     def __init__(
         self,
         letters: List[str],
@@ -126,9 +120,8 @@ class Glyph:
         end: Optional[int],
         connect_before: Optional[int],
         connect_after: Optional[int],
-        col: int,
-        row: int,
         size: int,
+        **kwargs,
     ) -> None:
         self.letters = letters
         self.angle = angle
@@ -136,9 +129,15 @@ class Glyph:
         self.end = end
         self.connect_before = connect_before
         self.connect_after = connect_after
-        self.col = col
-        self.row = row
         self.size = size
+
+        consonant_base = [not vowel(c) for c in letters].index(True)
+
+        vowels_before = [vowel(c) for c in letters[:consonant_base]]
+        vowels_after = [vowel(c) for c in letters[consonant_base:]]
+
+        self.before = [i for i, c in enumerate(vowels_before) if c]
+        self.after = [i - 1 for i, c in enumerate(vowels_after) if c]
 
     def read_symbol_image(self, name: str) -> Image:
         name = self.SYMBOLS[name] if name in self.SYMBOLS.keys() else name
@@ -160,7 +159,9 @@ class Glyph:
 
     def render(self) -> None:
         img = Image.new(
-            mode="RGBA", size=(self.size, self.size), color=(255, 255, 255, 0)
+            mode="RGBA",
+            size=(self.size, self.size),
+            color=(255, 255, 255, 0),
         )
         box = (0, 0)
 
@@ -199,20 +200,21 @@ class Diabolic:
     SIZE = 210
 
     def __init__(self, string: str) -> None:
-        self.string = clean_up_string(string=string)
-        groups = split_into_groups(string=self.string)
+        string = clean_up_string(string=string)
+        groups = split_into_groups(string=string)
+
         self.groups = [Glyph(**group, size=self.SIZE) for group in groups]
 
         self.base_image = Image.new(
             mode="RGBA",
             size=(
-                self.SIZE * (max([g.col for g in self.groups]) + 2),
-                self.SIZE * (max([g.row for g in self.groups]) + 2),
+                self.SIZE * (max([g["col"] for g in groups]) + 2),
+                self.SIZE * (max([g["row"] for g in groups]) + 2),
             ),
             color=(255, 255, 255, 0),
         )
 
-        print(self.groups[0].render())
+        self.groups[0].render()
 
     def show(self) -> None:
         self.base_image.show()
@@ -234,6 +236,6 @@ if __name__ == "__main__":
 
     image = Diabolic(
         # string="we found there a garden of horrible roses",
-        string="qn",
+        string="aqueous",
     )
     # image.show()
