@@ -31,8 +31,44 @@ def paste_transparent_image(
 
 
 class Diacritic:
-    def __init__(self, symbol: str):
-        self.symbol = symbol
+    def __init__(self, symbol: str, angle: int, index: int, length: int):
+        self.symbol = "repeat" if symbol == "&" else symbol
+        self.angle = angle
+        self.index = index
+        self.length = length
+
+    def center(self, x: float, y: float, dx: float, dy: float, k: int):
+        xs = [x] * k
+        ys = [y] * k
+        multis = [i - (k - 1) / 2 for i in range(k)]
+
+        out = []
+        for i in range(k):
+            out.append((xs[i] + multis[i] * dx, ys[i] + multis[i] * dy))
+        return out
+
+    @property
+    def box(self):
+        out = []
+        if self.index > 0:
+            angles = [
+                dict(x=2, y=5, dx=0, dy=1, k=self.length),
+                dict(x=6, y=2, dx=1, dy=0, k=self.length),
+                dict(x=1, y=2, dx=-1, dy=0, k=self.length),
+                dict(x=5, y=5, dx=0, dy=1, k=self.length),
+                dict(x=6, y=2, dx=1, dy=0, k=self.length),
+            ]
+            print("after: " + str(self.center(**angles[self.angle])))
+        else:
+            angles = ["top", ["left"], "right", "top", ["left"]]
+            print("before: " + str(angles[self.angle]))
+
+        return out
+
+    @property
+    def image(self) -> None:
+        print(self.box)
+        print(self.__dict__)
 
 
 class Glyph:
@@ -65,7 +101,19 @@ class Glyph:
 
         for letter in self.string:
             if letter not in "bcdfgjklmnpqrstvwxyz,.?!_":
-                diacritics.append(Diacritic(symbol=letter))
+                length = (
+                    len(self.string[: self.string.index(self.base)])
+                    if self.string.index(letter) < self.string.index(self.base)
+                    else len(self.string[self.string.index(self.base) :])
+                )
+                diacritics.append(
+                    Diacritic(
+                        symbol=letter,
+                        angle=self.angle,
+                        index=self.string.index(letter) - self.string.index(self.base),
+                        length=length,
+                    )
+                )
 
         return None if not len(diacritics) else diacritics
 
@@ -128,6 +176,10 @@ class Glyph:
                 base=img,
                 layer=read_symbol_image(name="connect").rotate(90 * self.behind),
             )
+
+        if self.diacritics:
+            for d in self.diacritics:
+                print(d.image)
 
         return img
 
@@ -257,6 +309,6 @@ if __name__ == "__main__":
 
     image = Diabolic(
         # string="we found there a garden of horrible roses",
-        string="qqrta",
+        string="heqqrta",
     )
     image.show()
