@@ -86,7 +86,7 @@ def split_into_groups(
     output = []
 
     angles = populate_array(template=[1, 3, 2, 0], base=matches)
-    angles[0] = 0
+    angles[0] = 4
 
     start_caps = populate_array(template=[2, 3, 2, 1], base=matches)
     start_caps[0] = 0
@@ -254,6 +254,20 @@ class Diabolic:
                 ],
             ),
         ),
+        dict(
+            after=dict(
+                single=[
+                    [(5, 1.5)],
+                    [(4.5, 1.5), (5.5, 1.5)],
+                    [(4, 1.5), (5, 1.5), (6, 1.5)],
+                ],
+                multiple=[
+                    [(6.5, 1.5)],
+                    [(5.5, 1.5), (7.5, 1.5)],
+                    [(5, 1.5), (6.5, 1.5), (8, 1.5)],
+                ],
+            ),
+        ),
     ]
 
     def __init__(self, string: str):
@@ -385,3 +399,12 @@ class Diabolic:
 
         output = buffer.getvalue()
         return "data:image/png;base64," + b64encode(output).decode()
+
+
+if __name__ == "__main__":
+    from os import system
+
+    system("clear")
+    string = "bgrda"
+
+    Diabolic(string).show()
