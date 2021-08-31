@@ -73,7 +73,7 @@ def split_into_groups(string: str) -> List[dict[str, Optional[Union[int, List[st
 
         temp = dict(
             letters=[character for character in match.group(0)],
-            angle=[1, 3, 2, 0][index % 4] if index != 0 else 5,
+            angle=[1, 3, 2, 0][index % 4] if index != 0 else 4,
             start=None,
             end=None,
             connect_before=None,
@@ -99,6 +99,18 @@ def split_into_groups(string: str) -> List[dict[str, Optional[Union[int, List[st
     return output
 
 
+def paste_transparent_image(
+    background: Image,
+    overlay: Image,
+    box: Tuple[int, int] = (0, 0),
+) -> Image:
+
+    layer = Image.new(mode="RGBA", size=background.size)
+    layer.paste(im=overlay, box=box, mask=overlay)
+
+    return Image.alpha_composite(background, layer)
+
+
 class Glyph:
     SYMBOLS = {
         "_": "blank",
@@ -110,7 +122,7 @@ class Glyph:
         ".": "stop",
     }
 
-    TEMPLATES = []
+    SIZE = 30
 
     def __init__(
         self,
@@ -120,8 +132,9 @@ class Glyph:
         end: Optional[int],
         connect_before: Optional[int],
         connect_after: Optional[int],
+        col: int,
+        row: int,
         size: int,
-        **kwargs,
     ) -> None:
         self.letters = letters
         self.angle = angle
@@ -129,6 +142,8 @@ class Glyph:
         self.end = end
         self.connect_before = connect_before
         self.connect_after = connect_after
+        self.col = col
+        self.row = row
         self.size = size
 
         consonant_base = [not vowel(c) for c in letters].index(True)
@@ -145,17 +160,65 @@ class Glyph:
 
         return Image.open(join(path, name + ".png"))
 
-    def paste_transparent_image(
+    def get_vowel_position(
         self,
-        background: Image,
-        overlay: Image,
-        box: Tuple[int, int] = (0, 0),
-    ) -> Image:
+        after: bool,
+        angle: int,
+        length: int,
+        index: int,
+    ) -> Tuple[int, int]:
 
-        layer = Image.new(mode="RGBA", size=background.size)
-        layer.paste(im=overlay, box=box, mask=overlay)
+        before_0 = [
+            [(2, 3.5)],
+            [(2, 5), (2, 4)],
+            [(2, 5.5), (2, 4.5), (2, 3.5)],
+        ]
+        before_1 = []
+        before_2 = []
+        before_3 = []
+        before_4 = [
+            [(2, 4.5)],
+            [(2, 5), (2, 4)],
+            [(2, 5.5), (2, 4.5), (2, 3.5)],
+        ]
 
-        return Image.alpha_composite(background, layer)
+        after_0 = [
+            [(2, 4.5)],
+            [(2, 4), (2, 5)],
+            [(2, 3.5), (2, 4.5), (2, 5.5)],
+        ]
+        after_1 = []
+        after_2 = []
+        after_3 = []
+        after_4 = [
+            [(2, 3.5)],
+            [(2, 4), (2, 5)],
+            [(2, 3.5), (2, 4.5), (2, 5.5)],
+        ]
+
+        choices = [
+            before_0,
+            before_1,
+            before_2,
+            before_3,
+            before_4,
+        ]
+
+        if after:
+            choices = [
+                after_0,
+                after_1,
+                after_2,
+                after_3,
+                after_4,
+            ]
+
+        print(angle, length, index)
+        print(choices[angle])
+        print(choices[angle][length])
+        print(choices[angle][length][index])
+        return (0, 0)
+        return tuple([int(self.SIZE * b) for b in choices[angle][length][index]])
 
     def render(self) -> None:
         img = Image.new(
@@ -164,35 +227,44 @@ class Glyph:
             color=(255, 255, 255, 0),
         )
         box = (0, 0)
+        saw_consonant = False
 
-        for l in self.letters:
-            layer = self.read_symbol_image(l)
+        for index, letter in enumerate(self.letters):
+            layer = self.read_symbol_image(letter)
 
-            if not vowel(l):
+            if not vowel(letter):
                 angle = 0 if self.angle == 5 else self.angle
                 layer = layer.rotate(90 * angle)
-            else:
-                pass
+                saw_consonant = True
+                box = (0, 0)
 
-            img = self.paste_transparent_image(background=img, overlay=layer, box=box)
+            else:
+                array = self.before if not saw_consonant else self.after
+                box = self.get_vowel_position(
+                    after=saw_consonant,
+                    angle=self.angle,
+                    length=len(array) - 1,
+                    index=index,
+                )
+
+            img = paste_transparent_image(background=img, overlay=layer, box=box)
 
         if self.start is not None:
             layer = self.read_symbol_image("cap").rotate(90 * self.start)
-            img = self.paste_transparent_image(background=img, overlay=layer, box=box)
+            img = paste_transparent_image(background=img, overlay=layer, box=box)
 
         if self.end is not None:
             layer = self.read_symbol_image("cap").rotate(90 * self.end)
-            img = self.paste_transparent_image(background=img, overlay=layer, box=box)
+            img = paste_transparent_image(background=img, overlay=layer, box=box)
 
         if self.connect_before is not None:
             layer = self.read_symbol_image("connect").rotate(90 * self.connect_before)
-            img = self.paste_transparent_image(background=img, overlay=layer, box=box)
+            img = paste_transparent_image(background=img, overlay=layer, box=box)
 
         if self.connect_after is not None:
             layer = self.read_symbol_image("connect").rotate(90 * self.connect_after)
-            img = self.paste_transparent_image(background=img, overlay=layer, box=box)
+            img = paste_transparent_image(background=img, overlay=layer, box=box)
 
-        img.show()
         return img
 
 
@@ -208,13 +280,24 @@ class Diabolic:
         self.base_image = Image.new(
             mode="RGBA",
             size=(
-                self.SIZE * (max([g["col"] for g in groups]) + 2),
-                self.SIZE * (max([g["row"] for g in groups]) + 2),
+                int(self.SIZE * (max([g["col"] for g in groups]) + 1.5)),
+                int(self.SIZE * (max([g["row"] for g in groups]) + 1.5)),
             ),
             color=(255, 255, 255, 0),
         )
 
-        self.groups[0].render()
+        self.render()
+
+    def render(self) -> None:
+        for group in self.groups:
+            self.base_image = paste_transparent_image(
+                background=self.base_image,
+                overlay=group.render(),
+                box=(
+                    (self.SIZE * group.col) + (self.SIZE // 4),
+                    (self.SIZE * group.row) + (self.SIZE // 4),
+                ),
+            )
 
     def show(self) -> None:
         self.base_image.show()
@@ -236,6 +319,6 @@ if __name__ == "__main__":
 
     image = Diabolic(
         # string="we found there a garden of horrible roses",
-        string="aqueous",
+        string="qwrta",
     )
-    # image.show()
+    image.show()
