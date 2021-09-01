@@ -1,8 +1,10 @@
-import re
-import io
-import base64
+"""Base class for generating diabolic script images"""
+
+from base64 import b64encode
+from io import BytesIO
 from os.path import dirname, join, realpath
-from typing import List, Optional, Tuple, Union
+from re import MULTILINE, finditer, sub
+from typing import List, Optional, Tuple
 
 from PIL import Image
 
@@ -11,8 +13,58 @@ GLYPH = 210
 DIACRITIC = 30
 
 
-def read_symbol_image(name: str, symbols: dict[str, str] = {}) -> Image:
-    name = symbols[name] if name in symbols.keys() else name
+def clean_up_string(string: str) -> str:
+    """Formats text as Diabolic likes it"""
+    string = string.lower().strip()
+
+    string = sub(
+        pattern=r"([bcdfghjklmnpqrstvwxyz])\1+",
+        repl=r"\1&",
+        string=string,
+        flags=MULTILINE,
+    )
+
+    devoc = sub(
+        pattern=r"[aeiouh&]+",
+        repl="",
+        string=string,
+        flags=MULTILINE,
+    )
+
+    if len(devoc) == 0:
+        string = sub(
+            pattern=r"([aeiouh&]{1,3})([aeiouh&]{1,3})",
+            repl=r"\1_\2",
+            string=string,
+            flags=MULTILINE,
+        )
+
+    string = sub(
+        pattern=r"(\s)([aeiouh&])(\s)",
+        repl=r"\1\2_\3",
+        string=string,
+        flags=MULTILINE,
+    )
+
+    string = sub(
+        pattern=r"([.,:?!])(\s?)",
+        repl=r" \1\2",
+        string=string,
+        flags=MULTILINE,
+    )
+
+    string = sub(
+        pattern=r"\s+",
+        repl=" ",
+        string=string,
+        flags=MULTILINE,
+    )
+
+    return string.strip()
+
+
+def read_symbol_image(name: str, symbols: dict[str, str]) -> Image:
+    name = symbols[name] if len(symbols) and name in symbols.keys() else name
     path = realpath(join(dirname(__file__), "..", "assets"))
 
     return Image.open(join(path, name + ".png"))
@@ -31,56 +83,59 @@ def paste_transparent_image(
 
 
 class Diacritic:
-    def __init__(self, symbol: str, angle: int, index: int, length: int):
-        self.symbol = "repeat" if symbol == "&" else symbol
-        self.angle = angle
-        self.index = index
-        self.length = length
-
-    def center(self, x: float, y: float, dx: float, dy: float, k: int):
-        xs = [x] * k
-        ys = [y] * k
-        multis = [i - (k - 1) / 2 for i in range(k)]
-
-        out = []
-        for i in range(k):
-            out.append((xs[i] + multis[i] * dx, ys[i] + multis[i] * dy))
-        return out
+    def __init__(
+        self,
+        symbol: str,
+        numerics: dict[str, int],
+        solo: bool,
+    ) -> None:
+        self.symbol = symbol
+        self.angle = numerics["angle"]
+        self.index = numerics["index"]
+        self.length = numerics["length"]
+        self.solo = solo
 
     @property
-    def box(self):
-        out = []
-        if self.index > 0:
-            angles = [
-                dict(x=2, y=5, dx=0, dy=1, k=self.length),
-                dict(x=6, y=2, dx=1, dy=0, k=self.length),
-                dict(x=1, y=2, dx=-1, dy=0, k=self.length),
-                dict(x=5, y=5, dx=0, dy=1, k=self.length),
-                dict(x=6, y=2, dx=1, dy=0, k=self.length),
-            ]
-            print("after: " + str(self.center(**angles[self.angle])))
+    def box(self) -> Tuple[int, int]:
+        differences = [i - (self.length - 1) / 2 for i in range(self.length)]
+        difference = differences[abs(self.index) - 1]
+        difference *= 2 if self.solo else 1
+
+        add = (0, difference) if self.angle in [1, 2, 4] else (difference, 0)
+
+        angles_before_solo = [(5.5, 2), (2, 1.5), (5, 1), (2, 1.5), (2, 5.5)]
+        angles_before_multi = [(5.5, 2), (2, 1.5), (5, 1), (2, 1.5), (2, 5.5)]
+        angles_after_solo = [(2, 5.5), (6, 2), (1.5, 2), (5, 5), (5.5, 2)]
+        angles_after_multi = [(2, 6), (6.5, 2), (1, 2), (5, 6), (6.5, 2)]
+
+        if self.index < 0:
+            angles = angles_before_solo if self.solo else angles_before_multi
         else:
-            angles = ["top", ["left"], "right", "top", ["left"]]
-            print("before: " + str(angles[self.angle]))
+            add = add[::-1]
+            angles = angles_after_solo if self.solo else angles_after_multi
 
-        return out
+        angle = [angles[self.angle][i] + add[i] for i in range(2)]
+        angle = [int(a * DIACRITIC) for a in angle]
+
+        return tuple(angle)
 
     @property
-    def image(self) -> None:
-        print(self.box)
-        print(self.__dict__)
+    def image(self) -> Image:
+        return read_symbol_image(
+            name=self.symbol,
+            symbols={"&": "repeat"},
+        )
 
 
 class Glyph:
-    def __init__(self, string: str, index: int, start: bool, end: bool) -> None:
+    def __init__(self, string: str, index: int, bools: dict[str, bool]) -> None:
         self.string = string
         self.index = index
-        self.is_start = start
-        self.is_end = end
+        self.is_start = bools["start"]
+        self.is_end = bools["end"]
+        self.solo = bools["solo"]
 
-    @property
-    def angle(self) -> int:
-        return [0, 3, 2, 1][self.index % 4] if self.index > 0 else 4
+        print(self.string)
 
     @property
     def col(self) -> int:
@@ -96,46 +151,58 @@ class Glyph:
         return self.string[consonants.index(True)]
 
     @property
-    def diacritics(self) -> Optional[List[Diacritic]]:
+    def diacritics(self) -> List[Diacritic]:
         diacritics = []
 
-        for letter in self.string:
+        for index, letter in enumerate(self.string):
             if letter not in "bcdfgjklmnpqrstvwxyz,.?!_":
                 length = (
                     len(self.string[: self.string.index(self.base)])
-                    if self.string.index(letter) < self.string.index(self.base)
-                    else len(self.string[self.string.index(self.base) :])
+                    if index < self.string.index(self.base)
+                    else len(self.string[self.string.index(self.base) + 1 :])
+                )
+                ail = dict(
+                    angle=self.angle,
+                    index=index - self.string.index(self.base),
+                    length=length,
                 )
                 diacritics.append(
                     Diacritic(
                         symbol=letter,
-                        angle=self.angle,
-                        index=self.string.index(letter) - self.string.index(self.base),
-                        length=length,
+                        numerics=ail,
+                        solo=self.solo,
                     )
                 )
 
-        return None if not len(diacritics) else diacritics
+        return diacritics
+
+    @property
+    def angle(self) -> int:
+        return [1, 3, 2, 0][self.index % 4] if self.index > 0 else 4
 
     @property
     def start(self) -> Optional[int]:
         if self.is_start:
             return [2, 3, 2, 1][self.index % 4] if self.index > 0 else 0
+        return None
 
     @property
     def end(self) -> Optional[int]:
         if self.is_end:
             return [1, 0, 3, 0][self.index % 4]
+        return None
 
     @property
     def ahead(self) -> Optional[int]:
         if not self.is_end:
             return [1, 0, 3, 0][self.index % 4]
+        return None
 
     @property
     def behind(self) -> Optional[int]:
         if not self.is_start:
             return [2, 3, 2, 1][self.index % 4]
+        return None
 
     @property
     def image(self) -> Image:
@@ -156,92 +223,51 @@ class Glyph:
         if self.is_start:
             img = paste_transparent_image(
                 base=img,
-                layer=read_symbol_image(name="cap").rotate(90 * self.start),
+                layer=read_symbol_image(name="cap", symbols={}).rotate(90 * self.start),
             )
 
         if self.is_end:
             img = paste_transparent_image(
                 base=img,
-                layer=read_symbol_image(name="cap").rotate(90 * self.end),
+                layer=read_symbol_image(name="cap", symbols={}).rotate(90 * self.end),
             )
 
         if self.ahead is not None:
             img = paste_transparent_image(
                 base=img,
-                layer=read_symbol_image(name="connect").rotate(90 * self.ahead),
+                layer=read_symbol_image(name="connect", symbols={}).rotate(
+                    90 * self.ahead
+                ),
             )
 
         if self.behind is not None:
             img = paste_transparent_image(
                 base=img,
-                layer=read_symbol_image(name="connect").rotate(90 * self.behind),
+                layer=read_symbol_image(name="connect", symbols={}).rotate(
+                    90 * self.behind
+                ),
             )
 
-        if self.diacritics:
-            for d in self.diacritics:
-                print(d.image)
+        for diacritic in self.diacritics:
+            img = paste_transparent_image(
+                base=img,
+                layer=diacritic.image,
+                box=diacritic.box,
+            )
 
         return img
 
 
 class Diabolic:
     def __init__(self, string: str) -> None:
-        self.string = self.clean_up_string(string=string)
-
-    def clean_up_string(self, string: str) -> str:
-        string = string.lower().strip()
-
-        string = re.sub(
-            pattern=r"([bcdfghjklmnpqrstvwxyz])\1+",
-            repl=r"\1&",
-            string=string,
-            flags=re.MULTILINE,
-        )
-
-        devoc = re.sub(
-            pattern=r"[aeiouh&]+",
-            repl="",
-            string=string,
-            flags=re.MULTILINE,
-        )
-
-        if len(devoc) == 0:
-            string = re.sub(
-                pattern=r"([aeiouh&]{1,3})([aeiouh&]{1,3})",
-                repl=r"\1_\2",
-                string=string,
-                flags=re.MULTILINE,
-            )
-
-        string = re.sub(
-            pattern=r"(\s)([aeiouh&])(\s)",
-            repl=r"\1\2_\3",
-            string=string,
-            flags=re.MULTILINE,
-        )
-
-        string = re.sub(
-            pattern=r"([.,:?!])(\s?)",
-            repl=r" \1\2",
-            string=string,
-            flags=re.MULTILINE,
-        )
-
-        string = re.sub(
-            pattern=r"\s+",
-            repl=" ",
-            string=string,
-            flags=re.MULTILINE,
-        )
-
-        return string.strip()
+        self.string = clean_up_string(string=string)
 
     @property
     def glyphs(self) -> List[Glyph]:
         glyphs = []
 
         matches = list(
-            re.finditer(
+            finditer(
                 pattern=r"[aeiouh&]{0,3}([bcdfgjklmnpqrstvwxyz_])\1?[aeiouh&]{0,3}",
                 string=self.string,
             )
@@ -250,13 +276,22 @@ class Diabolic:
         for index, match in enumerate(matches):
             start, end = match.span()
             text = match.group(0)
+            solo = (
+                len(matches[index + 1].group(0)) > 1
+                if index < len(matches) - 1
+                else True
+            )
+            bools = dict(
+                start=start == 0 or index > 0 and self.string[start - 1] == " ",
+                end=end == len(self.string) or self.string[end] == " ",
+                solo=solo,
+            )
 
             glyphs.append(
                 Glyph(
                     string=text,
                     index=index,
-                    start=start == 0 or index > 0 and self.string[start - 1] == " ",
-                    end=end == len(self.string) or self.string[end] == " ",
+                    bools=bools,
                 )
             )
 
@@ -264,12 +299,12 @@ class Diabolic:
 
     @property
     def data_url(self) -> None:
-        buffer = io.BytesIO()
+        buffer = BytesIO()
         self.image.save(buffer, format="PNG")
         buffer.seek(0)
 
         output = buffer.getvalue()
-        return "data:image/png;base64," + base64.b64encode(output).decode()
+        return "data:image/png;base64," + b64encode(output).decode()
 
     @property
     def image(self) -> Image:
@@ -286,13 +321,13 @@ class Diabolic:
             color=(255, 255, 255, 0),
         )
 
-        for g in glyphs:
+        for glyph in glyphs:
             img = paste_transparent_image(
                 base=img,
-                layer=g.image,
+                layer=glyph.image,
                 box=(
-                    int(g.col * GLYPH + GLYPH / 2),
-                    int(g.row * GLYPH + GLYPH / 2),
+                    int(glyph.col * GLYPH + GLYPH / 4),
+                    int(glyph.row * GLYPH + GLYPH / 4),
                 ),
             )
 
@@ -300,15 +335,3 @@ class Diabolic:
 
     def show(self) -> None:
         self.image.show()
-
-
-if __name__ == "__main__":
-    from os import system
-
-    system("clear")
-
-    image = Diabolic(
-        # string="we found there a garden of horrible roses",
-        string="heqqrta",
-    )
-    image.show()
