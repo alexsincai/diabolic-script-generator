@@ -18,7 +18,11 @@ def index():
     error = None
 
     if request.is_json:
-        return jsonify({"url": url,})
+        return jsonify(
+            {
+                "url": url,
+            }
+        )
 
     return render_template(
         "index.html",
