@@ -1,3 +1,5 @@
+"""The generator server"""
+
 from flask import Flask, render_template, request, jsonify
 from .diabolic import Diabolic
 
@@ -6,7 +8,12 @@ app = Flask(__name__)
 
 
 @app.route("/", methods=["GET", "POST"])
-def index():
+def index() -> str:
+    """The main function
+
+    Returns:
+        str: HTML or JSON for given text
+    """
     text = (
         request.json.get("text")
         if request.is_json
@@ -33,5 +40,10 @@ def index():
 
 
 @app.route("/about")
-def about():
+def about() -> str:
+    """About page
+
+    Returns:
+        str: HTML
+    """
     return render_template("about.html")
