@@ -79,6 +79,9 @@ class Diacritic:
         self.preceding = preceding
         self.parent = parent
 
+    def __repr__(self) -> str:
+        return f"<{'-' if self.preceding else ''}{self.sign}>"
+
     @property
     def similar_count(self) -> int:
         """Returns:
@@ -91,12 +94,8 @@ class Diacritic:
         """Returns:
         int: The current index in the parent diacritic list
         """
-        group = [
-            d
-            for i, d in enumerate(self.parent.diacritics)
-            if d.preceding == self.preceding
-        ]
-        return group.index(self)
+        group = [d for d in self.parent.diacritics if d.preceding == self.preceding]
+        return group.index(self) if self in group else 0
 
     @property
     def position(self) -> List[int]:
@@ -108,6 +107,17 @@ class Diacritic:
 
         if track["before_start"] is None and self.parent.previous is not None:
             track["before_start"] = self.parent.previous.tracks["after_start"]
+
+            if angle == 4:
+                track["before_start"][0] -= SIZE
+            if angle == 3:
+                track["before_start"][1] -= SIZE
+            if angle == 2:
+                track["before_start"][0] += SIZE
+            if angle == 1:
+                track["before_start"][0] -= SIZE
+            if angle == 0:
+                track["before_start"][1] -= SIZE
 
         if track["after_end"] is None and self.parent.next is not None:
             track["after_end"] = self.parent.next.tracks["before_end"]
@@ -155,6 +165,11 @@ class Glyph:
         self.is_end = False
         self.diacritics = []
         self._tracks = None
+
+    def __repr__(self) -> str:
+        prc = "".join([str(d) for d in self.diacritics if d.preceding])
+        nxt = "".join([str(d) for d in self.diacritics if not d.preceding])
+        return f"({prc}-{self.base}-{nxt})"
 
     def mark(self, sign: str, preceding: bool = False) -> None:
         """Adds a diacritic to the glyph
@@ -428,14 +443,14 @@ def split_word_into_glyphs(word: str) -> List[Glyph]:
             else:
                 extras.append(word[index])
 
-    if output[0].base in "bdszxfvl" and len(output[0].diacritics) > 2:
-        extra = Glyph("blank")
-        extra.diacritics = [d for d in output[0].diacritics if d.preceding]
-        output[0].diacritics = [d for d in output[0].diacritics if not d.preceding]
-        output = [extra, *output]
+    # if output[0].base in "bdszxfvl" and len(output[0].diacritics) > 2:
+    #     extra = Glyph("blank")
+    #     extra.diacritics = [d for d in output[0].diacritics if d.preceding]
+    #     output[0].diacritics = [d for d in output[0].diacritics if not d.preceding]
+    #     output = [extra, *output]
 
-        for diacritic in extra.diacritics:
-            diacritic.preceding = False
+    #     for diacritic in extra.diacritics:
+    #         diacritic.preceding = False
 
     if output[0].base == "blank" and len(output[0].diacritics) == 0:
         output = output[1:]
@@ -464,6 +479,9 @@ class Diabolic:
 
     def __init__(self, string: str) -> None:
         self.string = string.lower().strip()
+
+    def __repr__(self) -> str:
+        return "".join([str(g) for g in self.glyphs])
 
     @property
     def glyphs(self) -> List[Glyph]:
@@ -524,8 +542,6 @@ class Diabolic:
 
                 d_img = diacritic.image
 
-                # print(glyph.base, glyph.tracks, diacritic.position)
-
                 copy.paste(
                     im=d_img,
                     box=(
@@ -566,6 +582,6 @@ if __name__ == "__main__":
 
     Diabolic(
         """
-        heremit crane
+        illusory owl
         """
     ).show()
