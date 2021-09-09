@@ -4,4 +4,3 @@ I was inspired by the Diabolic script of [Codex Inversus](https://linktr.ee/Code
 
 Note, the letter forms were designed by Luca Vanzella, I only did the implementation.
 
-Vowel placement is still wonky, and some words will simply not work. Calling it good for now.
