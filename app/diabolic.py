@@ -28,10 +28,7 @@ def read_file(name: str) -> Image:
     Returns:
         Image: The image for the character
     """
-    try:
-        return Image.open(join(dirname(__file__), "..", "assets", name + ".png"))
-    except:
-        pass
+    return Image.open(join(dirname(__file__), "..", "assets", name + ".png"))
 
 
 def apply_extras(images: List, condition: bool, option_1: int, option_2: int) -> Image:
@@ -440,7 +437,12 @@ def process_consonant(
 
     glyph = Glyph(base=word[index])
 
-    if index > 0 and word[index] == word[index - 1]:
+    if (
+        index > 0
+        and word[index] == word[index - 1]
+        and len(glyph.diacritics) > 0
+        and not glyph.diacritics[-1].sign == "repeat"
+    ):
         glyph = array.pop()
         glyph.mark(sign="repeat")
 
