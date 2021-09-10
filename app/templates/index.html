@@ -50,8 +50,11 @@
 
         {% if about %}
         <script defer>
-            // showModal();
-            aboutLink.click();
+            try {
+                setTimeout(showModal, 200);
+            } catch(e) {
+                console.error(e);
+            }
         </script>
         {% endif %}
     </body>
