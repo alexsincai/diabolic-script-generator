@@ -508,13 +508,26 @@ def split_word_into_glyphs(word: str) -> List[Glyph]:
     return output
 
 
+def clean_string(string: str) -> str:
+    """Args:
+        string (str): The string to be cleaned
+
+    Returns:
+        str: The cleaned string
+    """
+    string = string.lower().strip()
+    string = sub(pattern=r"[^a-z.,:?! ]+", repl="", string=string)
+    string = sub(pattern=r"(bcdfgjklmnpqrstvwxyz)\1+", repl=r"\1\1", string=string)
+    return string
+
+
 class Diabolic:
     """
     Turns a string into a set of glyphs
     """
 
     def __init__(self, string: str) -> None:
-        self.string = sub(r"[^a-z.,:?! ]+", repl="", string=string.lower().strip())
+        self.string = clean_string(string)
 
     def __repr__(self) -> str:
         return "".join([str(g) for g in self.glyphs])
