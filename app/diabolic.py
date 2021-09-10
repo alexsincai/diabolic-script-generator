@@ -4,7 +4,6 @@ Diabolic script generator
 
 from posixpath import dirname, join
 from typing import List, Optional, Tuple
-from csv import DictReader
 from base64 import b64encode
 from io import BytesIO
 from PIL import Image
@@ -309,46 +308,82 @@ class Glyph:
         Returns:
             List[List[int]]: The list of track endpoints
         """
-        with open(
-            join(
-                dirname(__file__),
-                "..",
-                "assets",
-                f"diabolic_angles_{angle}.csv",
-            ),
-            encoding="utf8",
-        ) as file:
-            reader = DictReader(
-                file,
-                fieldnames=[
-                    "base",
-                    "before_start_x",
-                    "before_start_y",
-                    "before_end_x",
-                    "before_end_y",
-                    "after_start_x",
-                    "after_start_y",
-                    "after_end_x",
-                    "after_end_y",
-                ],
-            )
-            reader = [r for r in reader if r["base"] == self.base].pop()
+        if angle == 0:
+            before_start_x = 205
+            before_start_y = 45
+            before_end_x = 165
+            before_end_y = 45
+            after_start_x = 45
+            after_start_y = 160
+            after_end_x = 45
+            after_end_y = 200
 
-            before_start_x = int(reader["before_start_x"])
-            before_start_y = int(reader["before_start_y"])
-            before_end_x = int(reader["before_end_x"])
-            before_end_y = int(reader["before_end_y"])
-            after_start_x = int(reader["after_start_x"])
-            after_start_y = int(reader["after_start_y"])
-            after_end_x = int(reader["after_end_x"])
-            after_end_y = int(reader["after_end_y"])
+            if self.base in "sz":
+                after_start_y = 170
 
-            return [
-                [before_start_x, before_start_y] if self.is_start else None,
-                [before_end_x, before_end_y],
-                [after_start_x, after_start_y],
-                [after_end_x, after_end_y] if self.is_end else None,
-            ]
+        if angle == 1:
+            before_start_x = 45
+            before_start_y = 0
+            before_end_x = 45
+            before_end_y = 45
+            after_start_x = 155
+            after_start_y = 45
+            after_end_x = 200
+            after_end_y = 45
+
+        if angle == 2:
+            before_start_x = 160
+            before_start_y = 0
+            before_end_x = 160
+            before_end_y = 30
+            after_start_x = 35
+            after_start_y = 45
+            after_end_x = 0
+            after_end_y = 45
+
+            if self.base in "sz":
+                before_end_y = 10
+                after_start_x = 15
+
+        if angle == 3:
+            before_start_x = 0
+            before_start_y = 45
+            before_end_x = 40
+            before_end_y = 45
+            after_start_x = 160
+            after_start_y = 160
+            after_end_x = 160
+            after_end_y = 200
+
+            if self.base == "d":
+                after_start_y = 185
+
+            if self.base in "stz":
+                after_start_y = 185
+
+            if self.base in "sz":
+                before_end_x = 5
+
+        if angle == 4:
+            before_start_x = 45
+            before_start_y = 200
+            before_end_x = 45
+            before_end_y = 140
+            after_start_x = 165
+            after_start_y = 45
+            after_end_x = 205
+            after_end_y = 45
+
+            if self.base in "sz":
+                before_start_y = 230
+                before_end_y = 170
+
+        return [
+            [before_start_x, before_start_y] if self.is_start else None,
+            [before_end_x, before_end_y],
+            [after_start_x, after_start_y],
+            [after_end_x, after_end_y] if self.is_end else None,
+        ]
 
     @property
     def tracks(self) -> dict[str, List[int]]:
