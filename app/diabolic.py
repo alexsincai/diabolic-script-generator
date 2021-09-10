@@ -359,6 +359,9 @@ class Glyph:
             if self.base == "d":
                 after_start_y = 185
 
+            if self.base == "p":
+                after_start_y = 120
+
             if self.base in "stz":
                 after_start_y = 185
 
@@ -378,6 +381,9 @@ class Glyph:
             if self.base in "sz":
                 before_start_y = 230
                 before_end_y = 170
+
+            if self.base == "p":
+                after_start_x = 110
 
         return [
             [before_start_x, before_start_y] if self.is_start else None,
@@ -437,12 +443,7 @@ def process_consonant(
 
     glyph = Glyph(base=word[index])
 
-    if (
-        index > 0
-        and word[index] == word[index - 1]
-        and len(glyph.diacritics) > 0
-        and not glyph.diacritics[-1].sign == "repeat"
-    ):
+    if index > 0 and word[index] == word[index - 1]:
         glyph = array.pop()
         glyph.mark(sign="repeat")
 
@@ -631,6 +632,6 @@ if __name__ == "__main__":
 
     Diabolic(
         """
-        illusory owl
+        zrtyephao
         """
     ).show()
