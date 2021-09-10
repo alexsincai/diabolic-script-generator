@@ -443,15 +443,6 @@ def split_word_into_glyphs(word: str) -> List[Glyph]:
             else:
                 extras.append(word[index])
 
-    # if output[0].base in "bdszxfvl" and len(output[0].diacritics) > 2:
-    #     extra = Glyph("blank")
-    #     extra.diacritics = [d for d in output[0].diacritics if d.preceding]
-    #     output[0].diacritics = [d for d in output[0].diacritics if not d.preceding]
-    #     output = [extra, *output]
-
-    #     for diacritic in extra.diacritics:
-    #         diacritic.preceding = False
-
     if output[0].base == "blank" and len(output[0].diacritics) == 0:
         output = output[1:]
 
