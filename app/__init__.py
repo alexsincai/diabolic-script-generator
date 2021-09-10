@@ -22,20 +22,14 @@ def index() -> str:
         else None
     )
     url = Diabolic(text).data_url if text is not None else None
-    error = None
 
     if request.is_json:
-        return jsonify(
-            {
-                "url": url,
-            }
-        )
+        return jsonify({"url": url})
 
     return render_template(
         "index.html",
         url=url,
         text=text,
-        error=error,
     )
 
 
@@ -46,4 +40,4 @@ def about() -> str:
     Returns:
         str: HTML
     """
-    return render_template("about.html")
+    return render_template("index.html", about=True)

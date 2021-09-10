@@ -1,25 +1,57 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Diabolic Script Generator</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+    </head>
+    <body>
+        <form action="{{ url_for('index') }}" method="POST">
+            <label for="text">Inscribe thy text</label>
+            <div>
+                <input name="text" id="text" value="{{ text if text != None else '' }}" autofocus />
+                <div>
+                    <button type="submit">Proceed</button>
+                </div>
+            </div>
+        </form>
 
-{% block content %}
-<section id="input">
-    <form action="/" method="POST">
-        <label for="text">Inscribe thy text</label>
-        <textarea name="text" id="text" autofocus>{{ text if text else "" }}</textarea>
-        <button type="submit">Proceed</button>
-    </form>
-    <p><a href="{{ url_for('about') }}">What is this?</a></p>
-</section>
+        <p>
+            <a href="{{ url_for('about') }}">What is this?</a>
+        </p>
 
-<section id="output">
-    {% if error %}
-        <h2>{{ error }}</h2>
-    {% else %}
-        {% if url %}
-        <img src="{{ url }}" alt="{{ text }}" />
+        <div id="output">
+            {% if url and text %}
+            <img src="{{ url }}" alt="{{ text }}" />
+            {% endif %}
+        </div>
+
+        <div id="about" tabindex="-1">
+            <div>
+                <div>
+                    <header>
+                        <h5>About the generator</h5>
+                        <a type="button"><span>&times;</span></a>
+                    </header>
+                    <main>
+                        <p>This application <em>should</em> generate samples of the Diabolic script, as it appears in <a href="https://linktr.ee/Codex_Inversus">Codex Inversus</a>.</p>
+                        <p>The application was written in Python by <a href="https://www.reddit.com/user/rockeh/">rockeh</a>, who had no hand in developing the written characters.</p>
+                    </main>
+                    <footer>
+                        <button type="button">Very well</button>
+                    </footer>
+                </div>
+            </div>
+        </div>
+
+        <script src="{{ url_for('static', filename='script.js') }}" defer></script>
+
+        {% if about %}
+        <script>
+            showModal();
+        </script>
         {% endif %}
-    {% endif %}
-</section>
-
-<script src="{{ url_for('static', filename='script.js') }}" defer></script>
-
-{% endblock %}
+    </body>
+</html>
