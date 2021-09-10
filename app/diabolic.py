@@ -142,6 +142,10 @@ class Diacritic:
         this_x = map_range(index, 0, this_list, minimum[0], maximum[0])
         this_y = map_range(index, 0, this_list, minimum[1], maximum[1])
 
+        if this_list == 0:
+            this_x = (minimum[0] + maximum[0]) / 2
+            this_y = (minimum[1] + maximum[1]) / 2
+
         return [this_x, this_y]
 
     @property
