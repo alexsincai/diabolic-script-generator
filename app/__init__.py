@@ -31,13 +31,3 @@ def index() -> str:
         url=url,
         text=text,
     )
-
-
-@app.route("/about")
-def about() -> str:
-    """About page
-
-    Returns:
-        str: HTML
-    """
-    return render_template("index.html", about=True)

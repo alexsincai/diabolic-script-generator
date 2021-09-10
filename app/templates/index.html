@@ -47,15 +47,5 @@
         </div>
 
         <script src="{{ url_for('static', filename='script.js') }}" defer></script>
-
-        {% if about %}
-        <script defer>
-            try {
-                setTimeout(showModal, 200);
-            } catch(e) {
-                console.error(e);
-            }
-        </script>
-        {% endif %}
     </body>
 </html>
