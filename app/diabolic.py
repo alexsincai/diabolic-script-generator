@@ -512,7 +512,7 @@ class Diabolic:
     """
 
     def __init__(self, string: str) -> None:
-        self.string = sub(r"[^a-z.,:?!]+", repl="", string=string.lower().strip())
+        self.string = sub(r"[^a-z.,:?! ]+", repl="", string=string.lower().strip())
 
     def __repr__(self) -> str:
         return "".join([str(g) for g in self.glyphs])
